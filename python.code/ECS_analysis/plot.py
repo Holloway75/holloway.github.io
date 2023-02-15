@@ -293,17 +293,39 @@ def plot_area2_fst_clustermap(input_df):
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
     plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
     pre_df2 = fst.data_prepare_for_heatmap(input_df)
-
-
-    g = sns.clustermap(
-        pre_df2,
-        figsize=(8, 6),
-        row_cluster=False,
-        dendrogram_ratio=(0.3, 0.2),
-        cbar_pos = (0.1, .2, .03, .4),
-        cmap='YlGnBu_r', robust=True
-    )
-
+    sns.clustermap(pre_df2, figsize=(8, 6), row_cluster=False, dendrogram_ratio=(0.3, 0.2),
+                   cbar_pos=(0.1, .2, .03, .4), cmap='YlGnBu_r', robust=True)
     plt.show()
 
+def gene200():
+    # 在任一地区携带频率>1/200的基因
+    plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
+    plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
+    a = ['北方', '南方', '华南']
+    cut_line = 1/200
+    glist=[]
+    for i in range(3):
+        pre_df = data_prepare.data2plot_gene(df_merge, area=[a[i]])
+        glist += pre_df.columns.tolist()
+    glist = list(set(glist))
 
+    df_merge = transform_merge_area(df_area, area_counterparts2)
+    pre_df = data_prepare.data2plot_gene(df_merge, 0)
+    pre_df = pre_df[glist]
+    pre_df.sort_values(by='total', inplace=True, axis=1)
+    fig, ax = plt.subplots(figsize=(8, 9))
+    y = pre_df.loc['total']
+    gene_num = len(y)
+    x = np.arange(gene_num)
+
+    ax.barh(x, y, height=0.7, color='#1f77b4', align='center', tick_label=pre_df.columns.tolist())
+    ax.set_xscale("log")
+    ax.spines['top'].set_color(None)
+    ax.spines['right'].set_color(None)
+    if cut_line:
+        plt.axvline(cut_line, color='r', label='携带频率=%s' % str(Fraction(1, int(1 / cut_line))))
+        ax.set_title('任一地区携带频率>1/200的%d个基因' % gene_num, fontsize=14)
+    plt.legend(loc=0, fontsize=12)
+    ax.set_xlabel('携带频率', fontsize=12)
+    ax.set_ylabel('基因', fontsize=12)
+    plt.show()

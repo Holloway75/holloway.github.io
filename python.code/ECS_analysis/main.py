@@ -124,28 +124,4 @@ if __name__ == '__main__':
     df_merge = transform_merge_area(df_area, area_counterparts2)
     df_merge.drop('unknown', inplace=True)
 
-    # plot_area2_fst_clustermap(df_merge)
-    a = ['北方', '南方', '华南']
-    fig ,ax = plt.subplots(1,3, figsize=(24,6))
-    cut_line = 1/200
-    for i in range(3):
-        pre_df = data_prepare.data2plot_gene(df_merge, area=[a[i]])
-        y = pre_df.loc['total']
-        gene_num = len(y)
-        x = np.arange(gene_num)
-
-        ax[i].barh(x, y, height=0.7, color='#1f77b4', align='center', tick_label=pre_df.columns.tolist())
-        ax[i].set_xscale("log")
-        ax[i].spines['top'].set_color(None)
-        ax[i].spines['right'].set_color(None)
-        ax[i].set_title('Carrier frequency distribution of %d filtered genes' % gene_num, fontsize=14)
-
-        ax[i].set_xlabel('Carrier frequency', fontsize=12)
-        ax[i].set_ylabel('Gene', fontsize=12)
-        if gene_num > 60:
-            ax[i].set_yticks([])  # 基因数大于60，不显示基因名
-    plt.show()
-
-
-
 
