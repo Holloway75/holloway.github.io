@@ -1,9 +1,7 @@
 from addresss import *
 from plot import *
-<<<<<<< HEAD
 import matplotlib.pyplot as plt
-=======
->>>>>>> f85d5d3f0f61e82a369e5026d6023a7710853ed9
+
 
 
 def get_areas_from_id(name, fid, data):
@@ -81,17 +79,10 @@ def convert_in_samples(df, data, alist, xlist, sex_label):
     return df2
 
 
-<<<<<<< HEAD
-def convert_in_areas(df, ):
-    constant_column = ['area', 'carriers_auto', 'carriers_x', 'carriers_total',
-                       'individuals_male', 'individuals_total']
-    title_genelist = auto_list + xlink_list
-=======
 def convert_in_areas(df, alist, xlist):
     constant_column = ['area', 'carriers_auto', 'carriers_x', 'carriers_total',
                        'individuals_male', 'individuals_total']
     title_genelist = alist + xlist
->>>>>>> f85d5d3f0f61e82a369e5026d6023a7710853ed9
     column = constant_column + title_genelist
     df2 = pd.DataFrame(columns=column)
     areas = list(set(df.area.tolist()))
@@ -130,7 +121,6 @@ def convert_in_areas(df, alist, xlist):
 
 if __name__ == '__main__':
     df_area = pd.read_csv('area.combined.csv', index_col='area')
-<<<<<<< HEAD
     df_merge = transform_merge_area(df_area, area_counterparts2)
     df_merge.drop('unknown', inplace=True)
 
@@ -150,17 +140,12 @@ if __name__ == '__main__':
         ax[i].spines['right'].set_color(None)
         ax[i].set_title('Carrier frequency distribution of %d filtered genes' % gene_num, fontsize=14)
 
-        plt.legend(loc=0, fontsize=12)
         ax[i].set_xlabel('Carrier frequency', fontsize=12)
         ax[i].set_ylabel('Gene', fontsize=12)
         if gene_num > 60:
             ax[i].set_yticks([])  # 基因数大于60，不显示基因名
     plt.show()
 
-    df_merge = transform_merge_area(df_area, area_counterparts)
-    df_merge.drop('unknown', inplace=True)
-
-    plot_area2_fst_clustermap(df_merge)
 
 
 

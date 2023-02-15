@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-=======
-import copy
-
->>>>>>> f85d5d3f0f61e82a369e5026d6023a7710853ed9
 from addresss import *
 
 

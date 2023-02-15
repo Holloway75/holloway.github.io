@@ -1,10 +1,7 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import fst_calculation as fst
-<<<<<<< HEAD
 import data_prepare
-=======
->>>>>>> f85d5d3f0f61e82a369e5026d6023a7710853ed9
 from addresss import *
 from pyecharts import options as opts
 from pyecharts.charts import Map
@@ -15,10 +12,6 @@ from fractions import Fraction
 from sklearn.metrics import silhouette_score, calinski_harabasz_score
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> f85d5d3f0f61e82a369e5026d6023a7710853ed9
 def std_pca(data, n_components=2):
     st = StandardScaler()
     data_std = st.fit_transform(data)
@@ -84,7 +77,6 @@ def transform_merge_area(input_df, merge_rules):
     return pre_df
 
 
-<<<<<<< HEAD
 def transform_area_gene_cf_matrix(input_df, cut_line=1/200):
     pre_df = fst.filter_by_cf(input_df, cut_line)
     glist = pre_df.columns.tolist()[5:]
@@ -128,73 +120,6 @@ def plot_gene(input_df, cut_line=1/200, area=None):
     plt.show()
 
 
-=======
-def plot_gene(input_df, cut_line=1/500, picture=True):
-    pre_df = copy.deepcopy(input_df)
-
-    # 增加一行'total' 并统计总人数
-    pre_df.loc['total'] = [sum(pre_df[t]) for t in pre_df.columns]
-    male_counts = pre_df.loc['total', 'individuals_male']
-    total_counts = pre_df.loc['total', 'individuals_total']
-    female_counts = total_counts - male_counts
-
-    # 常隐和x连锁分别计算携带频率
-    for gene in pre_df.columns.tolist()[5:]:
-        if gene in auto_list:
-            pre_df.loc['total', gene] = pre_df.loc['total', gene] / total_counts
-        elif gene in xlink_list:
-            pre_df.loc['total', gene] = pre_df.loc['total', gene] / female_counts
-        else:
-            raise ValueError
-
-    # 去除人数相关的列，只保留基因，并以携带频率排序
-    pre_df.drop(['carriers_auto', 'carriers_x', 'carriers_total', 'individuals_male', 'individuals_total'],
-                inplace=True, axis=1)
-    pre_df.sort_values(by='total', inplace=True, axis=1)
-
-    # 绘图
-    xtickslabel = [t for t in pre_df.columns if pre_df.loc['total', t] > cut_line]
-    if picture:
-        fig, ax = plt.subplots(figsize=(8, 6))
-        y = [t for t in pre_df.loc['total'] if t > cut_line]
-        gene_num = len(y)
-        x = np.arange(gene_num)
-
-        ax.barh(x, y, height=0.7, color='#1f77b4', align='center', tick_label=xtickslabel)
-        ax.set_xscale("log")
-        ax.spines['top'].set_color(None)
-        ax.spines['right'].set_color(None)
-        if cut_line:
-            plt.axvline(cut_line, color='r', label='Carrier frequency=%s' % str(Fraction(1, int(1/cut_line))))
-            ax.set_title('Carrier frequency distribution of %d filtered genes' % gene_num, fontsize=14)
-
-        else:
-            plt.axvline(1/500, color='r', label='Carrier frequency=1/500')
-            ax.set_title('Carrier frequency distribution of %d genes' % gene_num, fontsize=14)
-        plt.legend(loc=0, fontsize=12)
-        ax.set_xlabel('Carrier frequency', fontsize=12)
-        ax.set_ylabel('Gene', fontsize=12)
-        if gene_num > 60:
-            ax.set_yticks([])       # 基因数大于60，不显示基因名
-        plt.show()
-    return xtickslabel          # 返回保留的基因列表
-
-
-def transform_area_gene_cf_matrix(input_df, cut_line=1/200):
-    pre_df = copy.deepcopy(input_df)
-    glist = plot_gene(pre_df, cut_line, picture=False)
-
-    # 分别计算常隐和x连锁基因的携带频率
-    for i in pre_df.index:
-        for gene in auto_list:
-            pre_df.loc[i, gene] = (pre_df.loc[i, gene]+1) / (pre_df.loc[i, 'individuals_total']+2)
-        for gene in xlink_list:
-            pre_df.loc[i, gene] = (pre_df.loc[i, gene]+1) / \
-                                  (pre_df.loc[i, 'individuals_total'] - pre_df.loc[i, 'individuals_male']+2)
-    return pre_df[glist]
-
-
->>>>>>> f85d5d3f0f61e82a369e5026d6023a7710853ed9
 def plot_area_pca(input_df, cut_line=1/200, std=True):
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
     plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
@@ -273,11 +198,7 @@ def kmeans_evaluations(input_df):
     ax1.plot(x, sil,  'bo-', label='silhouette score')
     ax2 = ax1.twinx()
     ax2.plot(x, cal, 'ro-', label='calinski harabasz score')
-<<<<<<< HEAD
     fig.legend(labels=('Silhouette','Calinski Harabasz'), loc=(0.65, 0.75))
-=======
-    fig.legend(labels = ('Silhouette','Calinski Harabasz'), loc=(0.65, 0.75))
->>>>>>> f85d5d3f0f61e82a369e5026d6023a7710853ed9
     ax1.set_xlabel('Groups', fontsize=12)
     ax1.set_ylabel('Silhouette', fontsize=12)
     ax2.set_ylabel('Calinski Harabasz', fontsize=12)
