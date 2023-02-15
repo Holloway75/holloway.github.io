@@ -30,3 +30,20 @@ def data2plot_gene(input_df, cut_line=1/200, area=None):
     pre_df.sort_values(by='total', inplace=True, axis=1)
     return pre_df
 
+
+def transform_area_gene_cf_matrix(input_df, cut_line=1/200):
+    pre_df = fst.filter_by_cf(input_df, cut_line)
+    glist = pre_df.columns.tolist()[5:]
+
+    # 分别计算常隐和x连锁基因的携带频率
+    for i in pre_df.index:
+        for gene in glist:
+            if gene in auto_list:
+                pre_df.loc[i, gene] = (pre_df.loc[i, gene]) / (pre_df.loc[i, 'individuals_total'])
+            elif gene in xlink_list:
+                pre_df.loc[i, gene] = (pre_df.loc[i, gene]) / \
+                                  (pre_df.loc[i, 'individuals_total'] - pre_df.loc[i, 'individuals_male'])
+            else:
+                raise ValueError
+    return pre_df[glist]
+

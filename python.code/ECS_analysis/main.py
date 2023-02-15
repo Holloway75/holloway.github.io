@@ -1,6 +1,6 @@
 from addresss import *
 from plot import *
-import matplotlib.pyplot as plt
+
 
 
 
@@ -121,7 +121,6 @@ def convert_in_areas(df, alist, xlist):
 
 if __name__ == '__main__':
     df_area = pd.read_csv('area.combined.csv', index_col='area')
-    df_merge = transform_merge_area(df_area, area_counterparts2)
+    df_merge = transform_merge_area(df_area, area_counterparts)
     df_merge.drop('unknown', inplace=True)
-
-
+    plot_kmeans_pca(df_merge, 3)

@@ -12,19 +12,10 @@ from fractions import Fraction
 from sklearn.metrics import silhouette_score, calinski_harabasz_score
 
 
-def std_pca(data, n_components=2):
-    st = StandardScaler()
-    data_std = st.fit_transform(data)
-    pca = PCA(n_components=n_components)
-    data_pca = pca.fit(data_std).transform(data_std)
-    return data_pca
-
-
 def plot_china_map(input_df):
     data = input_df[['area', 'individuals']].values.tolist()
     for i in data:
         i[0] = province_name_simple_to_full(i[0])
-
     c = Map()
     c.add(series_name='样本数量', data_pair=data, maptype="china")
     c.set_global_opts(title_opts=opts.TitleOpts(title="样本收集数量"), visualmap_opts=opts.VisualMapOpts(max_=1000))
@@ -77,23 +68,6 @@ def transform_merge_area(input_df, merge_rules):
     return pre_df
 
 
-def transform_area_gene_cf_matrix(input_df, cut_line=1/200):
-    pre_df = fst.filter_by_cf(input_df, cut_line)
-    glist = pre_df.columns.tolist()[5:]
-
-    # 分别计算常隐和x连锁基因的携带频率
-    for i in pre_df.index:
-        for gene in glist:
-            if gene in auto_list:
-                pre_df.loc[i, gene] = (pre_df.loc[i, gene]) / (pre_df.loc[i, 'individuals_total'])
-            elif gene in xlink_list:
-                pre_df.loc[i, gene] = (pre_df.loc[i, gene]) / \
-                                  (pre_df.loc[i, 'individuals_total'] - pre_df.loc[i, 'individuals_male'])
-            else:
-                raise ValueError
-    return pre_df[glist]
-
-
 def plot_gene(input_df, cut_line=1/200, area=None):
     pre_df = data_prepare.data2plot_gene(input_df, cut_line, area)
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -120,30 +94,41 @@ def plot_gene(input_df, cut_line=1/200, area=None):
     plt.show()
 
 
-def plot_area_pca(input_df, cut_line=1/200, std=True):
+def plot_area_pca(input_df, cut_line=1/200):
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
     plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
-    pre_df = transform_area_gene_cf_matrix(input_df=input_df, cut_line=cut_line)
+    pre_df = data_prepare.transform_area_gene_cf_matrix(input_df=input_df, cut_line=cut_line)
 
     fig, ax = plt.subplots(figsize=(8, 6))
     x = np.array(pre_df)
-    if std:
-        ax.set_title('各地区单基因病携带频率主成分分析--标准化', fontsize=14)
-        x_r = std_pca(x, 2)
-    else:
-        ax.set_title('各地区单基因病携带频率主成分分析--未准化', fontsize=14)
-        pca = PCA(n_components=2)
-        x_r = pca.fit(x).transform(x)
+    pca = PCA(n_components=2)
+    ax.set_title('各地区单基因病携带频率主成分分析', fontsize=14)
+    x_r = pca.fit(x).transform(x)
     ax.scatter(x_r[:, 0], x_r[:, 1], alpha=0.9, lw=2)
 
     # 标注地域名称
     count = 0
     for text in pre_df.index:
-        if text == '京津':
-            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1] + 0.001),
+        if text == '河北':
+            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0]-0.015, x_r[count, 1]),
+                         fontsize=12)
+        elif text == '山西':
+            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0]-0.015, x_r[count, 1]),
+                         fontsize=12)
+        elif text == '河南':
+            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1]-0.006),
+                         fontsize=12)
+        elif text == '京津':
+            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1]+0.002),
                          fontsize=12)
         elif text == '安徽':
-            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0] - 0.001, x_r[count, 1] - 0.001),
+            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1]-0.003),
+                         fontsize=12)
+        elif text == '山东':
+            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1]+0.001),
+                         fontsize=12)
+        elif text == '黑龙江':
+            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0]-0.023, x_r[count, 1]-0.004),
                          fontsize=12)
         else:
             plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0] + 0.001, x_r[count, 1] - 0.001),
@@ -157,24 +142,43 @@ def plot_area_pca(input_df, cut_line=1/200, std=True):
     plt.show()
 
 
-def plot_kmeans_pca(input_df, k=2, picture=True, random_state=150):
-    x = np.array(input_df)
-    y_pred = KMeans(n_clusters=k, random_state=random_state).fit_predict(x)
+def plot_kmeans_pca(input_df, k=2, picture=True):
+    pre_df = data_prepare.transform_area_gene_cf_matrix(input_df)
+    x = np.array(pre_df)
+    y_pred = KMeans(n_clusters=k, random_state=3).fit_predict(x)
 
     if picture:
-        x_r = std_pca(x, 2)
+        pca = PCA(n_components=2)
+        x_r = pca.fit(x).transform(x)
         fig, ax = plt.subplots(figsize=(8, 6))
         for i in range(k):
             ax.scatter(x_r[y_pred == i, 0], x_r[y_pred == i, 1], alpha=0.8, lw=2)
-        for text, count in zip(input_df.index, np.arange(input_df.shape[0])):
-            if text == '京津':
-                plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1] + 0.001),
+        for text, count in zip(pre_df.index, np.arange(input_df.shape[0])):
+            if text == '河北':
+                plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0] - 0.015, x_r[count, 1]),
+                             fontsize=12)
+            elif text == '山西':
+                plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0] - 0.015, x_r[count, 1]),
+                             fontsize=12)
+            elif text == '河南':
+                plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1] - 0.006),
+                             fontsize=12)
+            elif text == '京津':
+                plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1] + 0.002),
                              fontsize=12)
             elif text == '安徽':
-                plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0] - 0.001, x_r[count, 1] - 0.001),
+                plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1] - 0.003),
+                             fontsize=12)
+            elif text == '山东':
+                plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1] + 0.001),
+                             fontsize=12)
+            elif text == '黑龙江':
+                plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]),
+                             xytext=(x_r[count, 0] - 0.023, x_r[count, 1] - 0.004),
                              fontsize=12)
             else:
-                plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0] + 0.001, x_r[count, 1] - 0.001),
+                plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]),
+                             xytext=(x_r[count, 0] + 0.001, x_r[count, 1] - 0.001),
                              fontsize=12)
         plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
         plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
@@ -189,12 +193,12 @@ def plot_kmeans_pca(input_df, k=2, picture=True, random_state=150):
 
 def kmeans_evaluations(input_df):
     sil, cal = [], []
-    for i in range(2, 11):
+    for i in range(2, 17):
         evaluations_index_list = plot_kmeans_pca(input_df, k=i, picture=False)
         sil.append(evaluations_index_list[0])
         cal.append(evaluations_index_list[1])
     fig, ax1 = plt.subplots(figsize=(8, 6))
-    x = [str(i) for i in range(2, 11)]
+    x = [str(i) for i in range(2, 17)]
     ax1.plot(x, sil,  'bo-', label='silhouette score')
     ax2 = ax1.twinx()
     ax2.plot(x, cal, 'ro-', label='calinski harabasz score')
@@ -232,7 +236,7 @@ def plot_area_gene_heatmap(input_df):
 def plot_area_area_heatmap(input_df):
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
     plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
-    input_df = transform_area_gene_cf_matrix(input_df, cut_line=1/200)
+    input_df = data_prepare.transform_area_gene_cf_matrix(input_df, cut_line=1/200)
     area_heatmap_list = input_df.index.tolist()
 
     data = np.array(input_df)
