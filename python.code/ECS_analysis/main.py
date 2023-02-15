@@ -156,12 +156,11 @@ if __name__ == '__main__':
         if gene_num > 60:
             ax[i].set_yticks([])  # 基因数大于60，不显示基因名
     plt.show()
-=======
+
     df_merge = transform_merge_area(df_area, area_counterparts)
     df_merge.drop('unknown', inplace=True)
 
     plot_area2_fst_clustermap(df_merge)
 
->>>>>>> f85d5d3f0f61e82a369e5026d6023a7710853ed9
 
 
