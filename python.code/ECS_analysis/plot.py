@@ -142,8 +142,8 @@ def plot_area_pca(input_df, cut_line=1/200):
     plt.show()
 
 
-def plot_kmeans_pca(input_df, k=2, picture=True):
-    pre_df = data_prepare.transform_area_gene_cf_matrix(input_df)
+def plot_kmeans_pca(input_df, k=2, cut_line=1/200,picture=True):
+    pre_df = data_prepare.transform_area_gene_cf_matrix(input_df, cut_line)
     x = np.array(pre_df)
     y_pred = KMeans(n_clusters=k, random_state=3).fit_predict(x)
 
@@ -191,14 +191,14 @@ def plot_kmeans_pca(input_df, k=2, picture=True):
     return [silhouette_score(x, y_pred), calinski_harabasz_score(x, y_pred)]
 
 
-def kmeans_evaluations(input_df):
+def kmeans_evaluations(input_df, cut_line=1/200):
     sil, cal = [], []
-    for i in range(2, 17):
-        evaluations_index_list = plot_kmeans_pca(input_df, k=i, picture=False)
+    for i in range(2, 11):
+        evaluations_index_list = plot_kmeans_pca(input_df, k=i, cut_line=cut_line, picture=False)
         sil.append(evaluations_index_list[0])
         cal.append(evaluations_index_list[1])
     fig, ax1 = plt.subplots(figsize=(8, 6))
-    x = [str(i) for i in range(2, 17)]
+    x = [str(i) for i in range(2, 11)]
     ax1.plot(x, sil,  'bo-', label='silhouette score')
     ax2 = ax1.twinx()
     ax2.plot(x, cal, 'ro-', label='calinski harabasz score')
@@ -301,19 +301,19 @@ def plot_area2_fst_clustermap(input_df):
                    cbar_pos=(0.1, .2, .03, .4), cmap='YlGnBu_r', robust=True)
     plt.show()
 
-def gene200():
+def gene200(input_df, cut_line=1/200):
     # 在任一地区携带频率>1/200的基因
+    df_merge = input_df
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
     plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
     a = ['北方', '南方', '华南']
-    cut_line = 1/200
     glist=[]
     for i in range(3):
         pre_df = data_prepare.data2plot_gene(df_merge, area=[a[i]])
         glist += pre_df.columns.tolist()
     glist = list(set(glist))
 
-    df_merge = transform_merge_area(df_area, area_counterparts2)
+    df_merge = input_df
     pre_df = data_prepare.data2plot_gene(df_merge, 0)
     pre_df = pre_df[glist]
     pre_df.sort_values(by='total', inplace=True, axis=1)

@@ -123,4 +123,5 @@ if __name__ == '__main__':
     df_area = pd.read_csv('area.combined.csv', index_col='area')
     df_merge = transform_merge_area(df_area, area_counterparts)
     df_merge.drop('unknown', inplace=True)
-    plot_kmeans_pca(df_merge, 3)
+    # kmeans_evaluations(df_merge, cut_line=1/100)
+    plot_kmeans_pca(df_merge, 3, cut_line=1/100)
