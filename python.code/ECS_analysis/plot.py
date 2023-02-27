@@ -297,9 +297,12 @@ def plot_area2_fst_clustermap(input_df):
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
     plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
     pre_df2 = fst.data_prepare_for_heatmap(input_df)
-    sns.clustermap(pre_df2, figsize=(8, 6), row_cluster=False, dendrogram_ratio=(0.3, 0.2),
+    g = sns.clustermap(pre_df2, figsize=(8, 6), row_cluster=False, dendrogram_ratio=(0.2, 0.2), method='ward',
                    cbar_pos=(0.1, .2, .03, .4), cmap='YlGnBu_r', robust=True)
+    plt.setp(g.ax_heatmap.xaxis.get_majorticklabels(), rotation=45)
+
     plt.show()
+
 
 def gene200(input_df, cut_line=1/200):
     # 在任一地区携带频率>1/200的基因

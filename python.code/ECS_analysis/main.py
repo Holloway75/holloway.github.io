@@ -1,3 +1,4 @@
+import plot
 from addresss import *
 from plot import *
 
@@ -118,14 +119,8 @@ def convert_in_areas(df, alist, xlist):
 
 
 if __name__ == '__main__':
-    df_sample = pd.read_csv('国家课题订单数据(含身份证敏感信息)-截止20230130.csv', index_col='样本编号')
-    for i in df_sample.index:
-        id = str(df_sample.loc[i, '身份证号前六位'])
-        area = id_province[id[0:2]]
-        df_sample.loc[i, 'area'] = area
-    arealist = list(set(df_sample.area.tolist()))
-    for area in arealist:
-        samplelist = df_sample[df_sample.area==area].index.tolist()
-        samplelist_rm = [t for t in samplelist if samplelist.index(t)>99]
-        df_sample.drop(samplelist_rm, inplace=True)
-    df_sample.to_csv('sample_list.csv', index=True, encoding='utf-8-sig')
+    df_area = pd.read_csv('area.combined.csv', index_col='area')
+    df_merge = plot.transform_merge_area(df_area, area_counterparts)
+    df_merge.drop('unknown', inplace=True)
+
+    plot_area2_fst_clustermap(df_merge)
