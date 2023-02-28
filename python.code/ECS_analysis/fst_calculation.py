@@ -39,14 +39,21 @@ def get_average_fst_from_area2(input_df, area_arr, area_col):
 def filter_by_cf(input_df, cut_line=1/200):
     pre_df = copy.deepcopy(input_df)
     rm_list = []
-    for gene in auto_list:
-        cf = sum(input_df[gene].tolist()) / sum(input_df['individuals_total'])
-        if cf < cut_line:
-            rm_list.append(gene)
-    for gene in xlink_list:
-        cf = sum(input_df[gene].tolist()) / (sum(input_df['individuals_total']) - sum(input_df['individuals_male']))
-        if cf < cut_line:
-            rm_list.append(gene)
+    glist = pre_df.columns.tolist()[5:]
+
+    # 常隐和x连锁分别计算携带频率
+    for gene in glist:
+        if gene in auto_list:
+            cf = sum(input_df[gene].tolist()) / sum(input_df['individuals_total'])
+            if cf < cut_line:
+                rm_list.append(gene)
+        elif gene in xlink_list:
+            cf = sum(input_df[gene].tolist()) / (sum(input_df['individuals_total']) - sum(input_df['individuals_male']))
+            if cf < cut_line:
+                rm_list.append(gene)
+        else:
+            raise ValueError
+
     pre_df.drop(rm_list, inplace=True, axis=1)
     return pre_df
 

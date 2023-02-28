@@ -1,4 +1,5 @@
-import plot
+import pandas as pd
+
 from addresss import *
 from plot import *
 
@@ -78,49 +79,24 @@ def convert_in_samples(df, data, alist, xlist, sex_label):
     return df2
 
 
-def convert_in_areas(df, alist, xlist):
-    constant_column = ['area', 'carriers_auto', 'carriers_x', 'carriers_total',
-                       'individuals_male', 'individuals_total']
-    title_genelist = alist + xlist
-    column = constant_column + title_genelist
-    df2 = pd.DataFrame(columns=column)
-    areas = list(set(df.area.tolist()))
-    province_count = 0
-    for x in areas:
-        df2.loc[province_count, 'area'] = x
-        df_x = df[df.area==x]
 
-        # 计数该地区中 常染色体病携带者 x携带者 总携带者人数 男性人数 总人数
-        status_list = df_x.carrier_status.tolist()
-        df2.loc[province_count, 'carriers_auto'] = len([sam for sam in status_list if sam >= 8])
-        df2.loc[province_count, 'carriers_x'] = len([sam for sam in status_list if (sam % 8) >= 4])
-        df2.loc[province_count, 'carriers_total'] = len([sam for sam in status_list if sam > 0])
-        df2.loc[province_count, 'individuals_male'] = sum(df_x.sex.tolist())
-        df2.loc[province_count, 'individuals_total'] = len(status_list)
-
-        # 计数该地区中每个基因的出现次数
-        raw_str_list = df_x.gene.tolist()
-        str_list = [gene for gene in raw_str_list if isinstance(gene, str)]         # 去除nan
-        gene_list = []
-        for strs in str_list:
-            for single_gene in strs.split(':'):         # 拆分字符串形式的基因“gene1:gene2：gene3”
-                gene_list.append(single_gene)
-        gene_list_rmdup = list(set(gene_list))
-        for gene in gene_list_rmdup:
-            df2.loc[province_count, gene] = gene_list.count(gene)
-
-        # 该省未检出的基因填0
-        for gene in title_genelist:
-            if pd.isna(df2.loc[province_count, gene]):
-                df2.loc[province_count, gene] = 0
-
-        province_count += 1
-    return df2
 
 
 if __name__ == '__main__':
-    df_area = pd.read_csv('area.combined.csv', index_col='area')
-    df_merge = plot.transform_merge_area(df_area, area_counterparts)
-    df_merge.drop('unknown', inplace=True)
+    # df_sample = pd.read_csv('sample.combined.csv')
+    # df = pd.DataFrame(columns=[str(i) for i in range(100)])
+    # for i in range(150, 210, 10):
+    #     df.loc[i] = [data_prepare.random_n_distance(i, df_sample) for t in range(100)]
+    # df.to_csv('n_test1.csv', index=True)
 
-    plot_area2_fst_clustermap(df_merge)
+    df = pd.read_csv('n.test.10_210_10.csv', index_col=0)
+    g = sns.catplot(
+        data=df.T, kind="strip"
+    )
+    plt.show()
+
+
+
+
+
+

@@ -240,8 +240,6 @@ def plot_area_area_heatmap(input_df):
     area_heatmap_list = input_df.index.tolist()
 
     data = np.array(input_df)
-    st = StandardScaler()
-    data_std = st.fit_transform(data)
     # 计算各个地区之间距离
     pre_df = pd.DataFrame()
 
@@ -249,7 +247,7 @@ def plot_area_area_heatmap(input_df):
         for col in area_heatmap_list:
             arr_num = area_heatmap_list.index(arr)
             col_num = area_heatmap_list.index(col)
-            pre_df.loc[arr, col] = np.linalg.norm([b-a for b,a in zip(data_std[arr_num], data_std[col_num])])
+            pre_df.loc[arr, col] = np.linalg.norm([b-a for b,a in zip(data[arr_num], data[col_num])])
 
     pre_df.index = pre_df.index.astype('category').set_categories(area_sort_list, ordered=True)
     pre_df.sort_index(inplace=True)
