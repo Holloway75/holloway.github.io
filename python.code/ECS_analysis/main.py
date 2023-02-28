@@ -84,15 +84,31 @@ def convert_in_samples(df, data, alist, xlist, sex_label):
 
 if __name__ == '__main__':
     # df_sample = pd.read_csv('sample.combined.csv')
-    # df = pd.DataFrame(columns=[str(i) for i in range(100)])
-    # for i in range(150, 210, 10):
-    #     df.loc[i] = [data_prepare.random_n_distance(i, df_sample) for t in range(100)]
+    # df = pd.DataFrame(columns=[str(i) for i in range(10, 210, 10)])
+    # for i in df.columns:
+    #     df[i] = [data_prepare.random_n_distance(int(i), df_sample) for t in range(100)]
     # df.to_csv('n_test1.csv', index=True)
+    # print(df)
 
-    df = pd.read_csv('n.test.10_210_10.csv', index_col=0)
+    # df1 = pd.read_csv('n_test1.csv', index_col=0)
+    # df2 = pd.read_csv('n.test.csv', index_col=0)
+    # df = pd.concat([df1, df2], ignore_index=True)
+    # df.to_csv('n.test.300.csv', index=True)
+
+
+
+    df = pd.read_csv('n.test.300.csv', index_col=0)
+    df2 = pd.DataFrame(columns=df.columns)
+    for i in df2.columns:
+        df2.loc['std', i] = np.std(df[i])
+
+
     g = sns.catplot(
-        data=df.T, kind="strip"
+        data=df, kind="violin"
     )
+    g.figure.set_size_inches(8, 6)
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.lineplot(data=df2.T, ax=ax)
     plt.show()
 
 
