@@ -2,10 +2,10 @@ from addresss import *
 
 
 def get_fst_from_area2_gene(input_df, area_arr, area_col, gene):
-    if gene in auto_list:
+    if gene in Auto_list:
         samples_arr = input_df.loc[area_arr, 'individuals_total']
         samples_col = input_df.loc[area_col, 'individuals_total']
-    elif gene in xlink_list:
+    elif gene in Xlink_list:
         samples_arr = input_df.loc[area_arr, 'individuals_total'] - input_df.loc[area_arr, 'individuals_male']
         samples_col = input_df.loc[area_col, 'individuals_total'] - input_df.loc[area_col, 'individuals_male']
     else:
@@ -43,11 +43,11 @@ def filter_by_cf(input_df, cut_line=1/200):
 
     # 常隐和x连锁分别计算携带频率
     for gene in glist:
-        if gene in auto_list:
+        if gene in Auto_list:
             cf = sum(input_df[gene].tolist()) / sum(input_df['individuals_total'])
             if cf < cut_line:
                 rm_list.append(gene)
-        elif gene in xlink_list:
+        elif gene in Xlink_list:
             cf = sum(input_df[gene].tolist()) / (sum(input_df['individuals_total']) - sum(input_df['individuals_male']))
             if cf < cut_line:
                 rm_list.append(gene)
@@ -66,7 +66,7 @@ def data_prepare_for_heatmap(pre_df):
     for arr in area_heatmap_list:
         for col in area_heatmap_list:
             pre_df2.loc[arr, col] = get_average_fst_from_area2(input_df, arr, col)
-    pre_df2.index = pre_df2.index.astype('category').set_categories(area_sort_list, ordered=True)
+    pre_df2.index = pre_df2.index.astype('category').set_categories(Area_sort_list, ordered=True)
     pre_df2.sort_index(inplace=True)
-    return pre_df2[area_sort_list]
+    return pre_df2[Area_sort_list]
 

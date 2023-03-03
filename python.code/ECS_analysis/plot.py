@@ -6,7 +6,6 @@ from addresss import *
 from pyecharts import options as opts
 from pyecharts.charts import Map
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from fractions import Fraction
 from sklearn.metrics import silhouette_score, calinski_harabasz_score
@@ -47,27 +46,6 @@ def plot_area_individual(input_df):
     plt.show()
 
 
-def transform_merge_area(input_df, merge_rules):
-    pre_df = copy.deepcopy(input_df)
-    for i in merge_rules.keys():
-        df_tmp = pre_df[[(t in merge_rules[i]) for t in pre_df.index]]      # 截取需合并地区数据
-        pre_df.drop([t for t in merge_rules[i]], inplace=True)              # 删除原地区数据
-
-        # 统计合并地区的携带者人数、总人数
-        pre_df.loc[i, 'carriers_auto'] = sum(df_tmp['carriers_auto'].tolist())
-        pre_df.loc[i, 'carriers_x'] = sum(df_tmp['carriers_x'].tolist())
-        pre_df.loc[i, 'carriers_total'] = sum(df_tmp['carriers_total'].tolist())
-        pre_df.loc[i, 'individuals_male'] = sum(df_tmp['individuals_male'].tolist())
-        pre_df.loc[i, 'individuals_total'] = sum(df_tmp['individuals_total'].tolist())
-
-        # 统计合并地区各个基因的检出次数
-        l = df_tmp.columns.tolist()
-        del l[0:5]
-        for t in l:
-            pre_df.loc[i, t] = sum(df_tmp[t].tolist())
-    return pre_df
-
-
 def plot_gene(input_df, cut_line=1/200, area=None):
     pre_df = data_prepare.data2plot_gene(input_df, cut_line, area)
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -84,7 +62,7 @@ def plot_gene(input_df, cut_line=1/200, area=None):
         ax.set_title('Carrier frequency distribution of %d filtered genes' % gene_num, fontsize=14)
 
     else:
-        plt.axvline(1 / 500, color='r', label='Carrier frequency=1/500')
+        plt.axvline(1 / 200, color='r', label='Carrier frequency=1/200')
         ax.set_title('Carrier frequency distribution of %d genes' % gene_num, fontsize=14)
     plt.legend(loc=0, fontsize=12)
     ax.set_xlabel('Carrier frequency', fontsize=12)
@@ -249,9 +227,9 @@ def plot_area_area_heatmap(input_df):
             col_num = area_heatmap_list.index(col)
             pre_df.loc[arr, col] = np.linalg.norm([b-a for b,a in zip(data[arr_num], data[col_num])])
 
-    pre_df.index = pre_df.index.astype('category').set_categories(area_sort_list, ordered=True)
+    pre_df.index = pre_df.index.astype('category').set_categories(Area_sort_list, ordered=True)
     pre_df.sort_index(inplace=True)
-    pre_df = pre_df[area_sort_list]
+    pre_df = pre_df[Area_sort_list]
 
     area_heatmap_list = pre_df.index.tolist()
 
@@ -280,7 +258,7 @@ def plot_area2_fst_heatmap(input_df):
 
     mask = np.triu(np.ones_like(pre_df2, dtype=bool), 1)    # 遮盖上三角
     fig, ax = plt.subplots(figsize=(16, 9))
-    sns.heatmap(pre_df2, mask=mask, cmap='YlGnBu_r', robust=True, annot=True,
+    sns.heatmap(pre_df2, mask=mask, cmap='coolwarm_r', robust=True, annot=True,
                 annot_kws={'size': 9, 'weight':'bold'},
                 fmt='.4f', square=True, linewidths=.5, cbar_kws={"shrink": .5})
 
