@@ -16,10 +16,10 @@ def calculate_odds_ratio(input_df, control_label, case_label, gene, label_column
     df_case = input_df[input_df[label_column] == case_label]
 
     # 计算四格表中元素abcd
-    c = df_control[gene].sum()
-    d = df_control.shape[0] - c
-    a = df_case[gene].sum()
-    b = df_case.shape[0] - a
+    c = df_control[gene].sum() + 1
+    d = df_control.shape[0] - c + 1
+    a = df_case[gene].sum() + 1
+    b = df_case.shape[0] - a +1
 
     # 计算OR值及其95%CI
     odds_ratio = (a * d) / (b * c)
