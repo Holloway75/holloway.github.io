@@ -1,5 +1,7 @@
 from addresss import *
 import fst_calculation as fst
+import pandas as pd
+import copy
 
 
 def get_keys(dic, val):
@@ -9,14 +11,73 @@ def get_keys(dic, val):
     return val
 
 
-def get_areas_from_id(name, fid, data):
+def get_sample_id(name, fid, data):
     df1 = data[(data.fid == fid) & (data.name == name)]
     if not df1.shape[0]:
         return "unknown"
     elif df1.shape[0] > 1:
         raise ValueError
     else:
-        return data.loc[df1.index[0], 'id']
+        return data.loc[df1.index[0], 'sample_id']
+
+
+def convert_in_samples(input_df, id_table, sex_label):
+    """
+    将原始数据中所有样本性别相同，转录到新df2, 每行为一个个体
+    :param input_df: 原始数据
+    :param id_table: Dataframe,包含name, fid与id(身份证前六位)
+    :param sex_label: 原始数据中样本的性别，int，0 or 1
+    """
+    columns_sample = ['name', 'sex', 'fid', 'area', 'hospital', 'carrier_status', 'gene', 'var_id']
+    df2 = pd.DataFrame(columns=columns_sample)
+    sample_counts = 0
+    all_lines = input_df.shape[0]
+    index = 0
+    while index < all_lines:
+        t = 1  # t为当前样本所占用的行数
+        if not index == all_lines - 1:
+            while pd.isna(input_df.loc[index + t, '姓名']):
+                t += 1
+                if index + t == all_lines:
+                    break
+        df2.loc[sample_counts, 'name'] = input_df.loc[index, '姓名']
+        df2.loc[sample_counts, 'sex'] = sex_label
+        df2.loc[sample_counts, 'fid'] = input_df.loc[index, '家系编号']
+        df2.loc[sample_counts, 'area'] = get_area_from_id(input_df.loc[index, '姓名'], input_df.loc[index, '家系编号'],
+                                                          id_table)
+        df2.loc[sample_counts, 'hospital'] = input_df.loc[index, '送检医院']
+
+        auto_status, x_status, f8_inv_status, fmr1_status = 0, 0, 0, 0
+        sample_gene_list, sample_var_list = [], []
+
+        if input_df.loc[index, '内含子1'] == '杂合变异' or input_df.loc[index, '内含子22'] == '杂合变异':
+            f8_inv_status = 1
+            sample_gene_list.append("F8")
+            sample_var_list.append("F8_inv")
+
+        if not pd.isna(input_df.loc[index, 'CGG重复数目']):
+            cgg_num = input_df.loc[index, 'CGG重复数目'].split('|')
+            if int(cgg_num[0]) > 54 or int(cgg_num[1]) > 54:
+                fmr1_status = 1
+                sample_gene_list.append("FMR1")
+                sample_var_list.append(input_df.loc[index, 'CGG重复数目'])
+
+        if not pd.isna(input_df.loc[index, '基因']):
+            for i in range(t):
+                sample_gene_list.append(input_df.loc[index+i, '基因'])
+                sample_var_list.append(input_df.loc[index+i, '变异ID'])
+
+        if sum([(x in Auto_list) for x in sample_gene_list]):
+            auto_status = 1
+        if sum([(x in Xlink_list) for x in sample_gene_list]):
+            x_status = 1
+        carrier_status = auto_status*2**3 + x_status*2**2 + f8_inv_status*2 + fmr1_status
+        df2.loc[sample_counts, 'carrier_status'] = carrier_status
+        df2.loc[sample_counts, 'gene'] = ":".join(sample_gene_list)
+        df2.loc[sample_counts, 'var_id'] = ":".join(sample_var_list)
+        index += t
+        sample_counts += 1
+    return df2
 
 
 def convert_in_areas(df):
@@ -33,10 +94,10 @@ def convert_in_areas(df):
 
         # 计数该地区中 常染色体病携带者 x携带者 总携带者人数 男性人数 总人数
         status_list = df_x.carrier_status.tolist()
-        df2.loc[province_count, 'carriers_auto'] = len([sam for sam in status_list if sam >= 8])
-        df2.loc[province_count, 'carriers_x'] = len([sam for sam in status_list if (sam % 8) >= 4])
-        df2.loc[province_count, 'carriers_total'] = len([sam for sam in status_list if sam > 0])
-        df2.loc[province_count, 'individuals_male'] = sum(df_x.sex.tolist())
+        df2.loc[province_count, 'carriers_auto'] = len([sam for sam in status_list if (sam & 8)])
+        df2.loc[province_count, 'carriers_x'] = len([sam for sam in status_list if (sam & 4)])
+        df2.loc[province_count, 'carriers_total'] = len([sam for sam in status_list if sam])
+        df2.loc[province_count, 'individuals_male'] = df_x.sex.sum()
         df2.loc[province_count, 'individuals_total'] = len(status_list)
 
         # 计数该地区中每个基因的出现次数
@@ -153,7 +214,7 @@ def transform_data_for_stats(input_df, df_id):
     # 获取main_area和second_area
     main_area = [get_keys(Area_counterparts2, i) for i in df_sample['area']]
     second_area = [get_keys(Area_counterparts, i) for i in df_sample['area']]
-    id_list = [get_areas_from_id(a, b, df_id) for a, b in zip(input_df.name, input_df.fid)]
+    id_list = [get_sample_id(a, b, df_id) for a, b in zip(input_df.name, input_df.fid)]
     df_sample['main_area'] = main_area
     df_sample['second_area'] = second_area
     df_sample['id'] = id_list
@@ -167,59 +228,4 @@ def transform_data_for_stats(input_df, df_id):
     return df_sample
 
 
-def transform_in_samples(df, data, sex_label):
-    """
-    将原始数据中所有样本性别相同，转录到新df2, 每行为一个个体
-    :param df: 原始数据
-    :param data: 包含name, fid与id(身份证前六位)
-    :param sex_label: 原始数据中样本的性别，int，0 or 1
-    """
-    columns_sample = ['name', 'sex', 'fid', 'area', 'hospital', 'carrier_status', 'gene', 'var_id']
-    df2 = pd.DataFrame(columns=columns_sample)
-    sample_counts = 0
-    lines = 0
-    all_lines = df.shape[0]
-    while lines < all_lines:
-        t = 1
-        if not lines == all_lines-1:
-            while pd.isna(df.loc[lines+t, '姓名']):
-                t += 1
-                if lines + t == all_lines:
-                    break
-        df2.loc[sample_counts, 'name'] = df.at[lines, '姓名']
-        df2.loc[sample_counts, 'sex'] = sex_label
-        df2.loc[sample_counts, 'fid'] = df.at[lines, '家系编号']
-        df2.loc[sample_counts, 'area'] = get_areas_from_id(df.loc[lines, '姓名'], df.at[lines, '家系编号'], data)
-        df2.loc[sample_counts, 'hospital'] = df.at[lines, '送检医院']
 
-        auto_status, x_status, f8_inv_status, fmr1_status = 0, 0, 0, 0
-        sample_gene_list, sample_var_list = [], []
-
-        if df.loc[lines, '内含子1'] == '杂合变异' or df.loc[lines, '内含子22'] == '杂合变异':
-            f8_inv_status = 1
-            sample_gene_list.append("F8")
-            sample_var_list.append("F8_inv")
-
-        if not pd.isna(df.loc[lines, 'CGG重复数目']):
-            cgg_num = df.loc[lines, 'CGG重复数目'].split('|')
-            if int(cgg_num[0]) > 54 or int(cgg_num[1]) > 54:
-                fmr1_status = 1
-                sample_gene_list.append("FMR1")
-                sample_var_list.append(df.loc[lines, 'CGG重复数目'])
-
-        if not pd.isna(df.loc[lines, '基因']):
-            for i in range(t):
-                sample_gene_list.append(df.loc[lines+i, '基因'])
-                sample_var_list.append(df.loc[lines+i, '变异ID'])
-
-        if sum([(x in Auto_list) for x in sample_gene_list]):
-            auto_status = 1
-        if sum([(x in Xlink_list) for x in sample_gene_list]):
-            x_status = 1
-        carrier_status = auto_status*2**3 + x_status*2**2 + f8_inv_status*2 + fmr1_status
-        df2.loc[sample_counts, 'carrier_status'] = carrier_status
-        df2.loc[sample_counts, 'gene'] = ":".join(sample_gene_list)
-        df2.loc[sample_counts, 'var_id'] = ":".join(sample_var_list)
-        lines += t
-        sample_counts += 1
-    return df2
