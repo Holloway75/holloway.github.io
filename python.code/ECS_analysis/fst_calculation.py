@@ -1,26 +1,32 @@
+import numpy as np
+
 from addresss import *
+import copy
+import pandas as pd
 
 
-def get_fst_from_area2_gene(input_df, area_arr, area_col, gene):
+def get_fst_from_area2_gene(input_df, area_row, area_col, gene):
     if gene in Auto_list:
-        samples_arr = input_df.loc[area_arr, 'individuals_total']
+        samples_row = input_df.loc[area_row, 'individuals_total']
         samples_col = input_df.loc[area_col, 'individuals_total']
     elif gene in Xlink_list:
-        samples_arr = input_df.loc[area_arr, 'individuals_total'] - input_df.loc[area_arr, 'individuals_male']
+        samples_row = input_df.loc[area_row, 'individuals_total'] - input_df.loc[area_row, 'individuals_male']
         samples_col = input_df.loc[area_col, 'individuals_total'] - input_df.loc[area_col, 'individuals_male']
     else:
         raise ValueError
 
-    freq_arr = input_df.loc[area_arr, gene] / (2*samples_arr)
-    freq_col = input_df.loc[area_col, gene] / (2*samples_col)
-    # hs = (2*freq_arr*(1-freq_arr)*samples_arr + 2*freq_col*(1-freq_col)*samples_col) / (samples_arr + samples_col)
-    # freq_total = (input_df.loc[area_arr, gene] + input_df.loc[area_col, gene]) / (2*(samples_arr + samples_col))
+    cf_row = input_df.loc[area_row, gene] / (samples_row)
+    cf_col = input_df.loc[area_col, gene] / (samples_col)
+    af_row = cf_row/2
+    af_col = cf_col/2
+    af_total = 0.5*(af_col + af_row)
 
-    hs = freq_arr*(1-freq_arr) + freq_col*(1-freq_col)
-    freq_total = (freq_arr + freq_col)/2
-    ht = 2*freq_total*(1-freq_total)
+    hs = af_row * (1-af_row) + af_col * (1-af_col)
+    ht = 2 * af_total * (1-af_total)
+
+
     if not ht:
-        return 0
+        return np.nan
     fst = 1-hs/ht
     if fst < 10**-12:
         return 0
@@ -29,11 +35,13 @@ def get_fst_from_area2_gene(input_df, area_arr, area_col, gene):
 
 
 def get_average_fst_from_area2(input_df, area_arr, area_col):
-    a = 0
+    a = []
     glist = input_df.columns.tolist()[5:]
     for gene in glist:
-        a += get_fst_from_area2_gene(input_df, area_arr, area_col, gene)
-    return a/len(glist)
+        a = np.append(a, get_fst_from_area2_gene(input_df, area_arr, area_col, gene))
+        a = np.array(a)
+        a = a[~np.isnan(a)]
+    return a.mean()
 
 
 def filter_by_cf(input_df, cut_line=1/200):

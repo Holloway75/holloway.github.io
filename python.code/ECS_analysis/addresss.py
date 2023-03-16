@@ -1,6 +1,14 @@
 import os
 
-__all__ = ['Area_counterparts', 'Area_counterparts2', 'Auto_list', 'Xlink_list', 'get_area_from_id']
+__all__ = [
+    'area_counterparts',
+    'area_counterparts2',
+    'Auto_list',
+    'Xlink_list',
+    'get_area_from_id',
+    'province_name_simple_to_full',
+    'Area_sort_list'
+]
 
 import pandas as pd
 
@@ -49,7 +57,7 @@ Autonomous_region = {'新疆':'新疆维吾尔自治区', '广西':'广西壮族
 Province = ['河北', '台湾', '山西', '辽宁', '吉林', '黑龙江', '江苏', '浙江', '安徽', '福建', '江西', '山东', '河南', '湖北',
             '湖南', '广东', '海南', '四川', '贵州', '云南', '陕西', '甘肃', '青海']
 
-Area_counterparts = {
+area_counterparts = {
     '华南': ['广东', '广西', '海南'],
     '浙沪': ['浙江', '上海'],
     '京津': ['北京', '天津'],
@@ -59,7 +67,7 @@ Area_counterparts = {
     '西北': ['陕西', '宁夏', '新疆', '甘肃', '青海', '西藏'],
     '蒙吉': ['内蒙古', '吉林']
 }
-Area_counterparts2 = {
+area_counterparts2 = {
     '华南': ['广东', '广西', '海南'],
     '南方': ['浙江', '上海', '江西', '福建', '台湾', '重庆', '湖北', '云南', '贵州', '四川', '湖南', '江苏'],
     '北方': ['北京', '天津','内蒙古', '吉林','陕西', '宁夏', '新疆', '甘肃', '青海', '西藏', '山东', '辽宁', '黑龙江', '河北',

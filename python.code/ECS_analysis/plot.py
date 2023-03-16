@@ -2,13 +2,16 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import fst_calculation as fst
 import data_prepare
-from addresss import *
 from pyecharts import options as opts
 from pyecharts.charts import Map
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from fractions import Fraction
 from sklearn.metrics import silhouette_score, calinski_harabasz_score
+import copy
+import pandas as pd
+import numpy as np
+from addresss import *
 
 
 def plot_china_map(input_df):
@@ -120,14 +123,14 @@ def plot_area_pca(input_df, cut_line=1/200):
     plt.show()
 
 
-def plot_kmeans_pca(input_df, k=2, cut_line=1/200,picture=True):
+def plot_kmeans_pca(input_df: pd.DataFrame, k=3, cut_line=1/200, picture=True):
     pre_df = data_prepare.transform_area_gene_cf_matrix(input_df, cut_line)
     x = np.array(pre_df)
     y_pred = KMeans(n_clusters=k, random_state=3).fit_predict(x)
 
     if picture:
         pca = PCA(n_components=2)
-        x_r = pca.fit(x).transform(x)
+        x_r = pca.fit_transform(x)
         fig, ax = plt.subplots(figsize=(8, 6))
         for i in range(k):
             ax.scatter(x_r[y_pred == i, 0], x_r[y_pred == i, 1], alpha=0.8, lw=2)
@@ -274,7 +277,7 @@ def plot_area2_fst_clustermap(input_df):
     plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
     pre_df2 = fst.data_prepare_for_heatmap(input_df)
     g = sns.clustermap(pre_df2, figsize=(8, 6), row_cluster=False, dendrogram_ratio=(0.2, 0.2), method='ward',
-                   cbar_pos=(0.1, .2, .03, .4), cmap='YlGnBu_r', robust=True)
+                   cbar_pos=(0.1, .2, .03, .4), cmap='coolwarm_r', robust=True)
     plt.setp(g.ax_heatmap.xaxis.get_majorticklabels(), rotation=45)
 
     plt.show()

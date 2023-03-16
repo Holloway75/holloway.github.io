@@ -2,6 +2,7 @@ from addresss import *
 import fst_calculation as fst
 import pandas as pd
 import copy
+import numpy as np
 
 
 def get_keys(dic, val):
@@ -85,8 +86,8 @@ def convert_in_areas(df):
                        'individuals_male', 'individuals_total']
     title_gene_list = Auto_list + Xlink_list
     column = constant_column + title_gene_list
-    df2 = pd.DataFrame(columns=column)
     areas = list(set(df.area.tolist()))
+    df2 = pd.DataFrame(np.zeros((len(areas), len(column))), columns=column)
     province_count = 0
     for x in areas:
         df2.loc[province_count, 'area'] = x
@@ -105,16 +106,11 @@ def convert_in_areas(df):
         str_list = [gene for gene in raw_str_list if isinstance(gene, str)]         # 去除nan
         gene_list = []
         for strs in str_list:
-            for single_gene in strs.split(':'):         # 拆分字符串形式的基因“gene1:gene2：gene3”
-                gene_list.append(single_gene)
+            a = list(set(strs.split(':')))         # 拆分字符串形式的基因“gene1:gene2：gene3”
+            gene_list += a
         gene_list_rmdup = list(set(gene_list))
         for gene in gene_list_rmdup:
             df2.loc[province_count, gene] = gene_list.count(gene)
-
-        # 该省未检出的基因填0
-        for gene in title_gene_list:
-            if pd.isna(df2.loc[province_count, gene]):
-                df2.loc[province_count, gene] = 0
 
         province_count += 1
     return df2
