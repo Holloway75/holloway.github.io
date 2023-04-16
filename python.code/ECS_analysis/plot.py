@@ -3,28 +3,30 @@ import seaborn as sns
 import fst_calculation as fst
 import data_prepare
 from addresss import *
-from pyecharts import options as opts
-from pyecharts.charts import Map
+import numpy as np
+import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from fractions import Fraction
 from sklearn.metrics import silhouette_score, calinski_harabasz_score
+import copy
 
 
 def plot_china_map(input_df):
-    data = input_df[['area', 'individuals']].values.tolist()
+    from pyecharts import options as opts
+    from pyecharts.charts import Map
+    data = input_df[['area', 'individuals_total']].values.tolist()
     for i in data:
         i[0] = province_name_simple_to_full(i[0])
     c = Map()
     c.add(series_name='样本数量', data_pair=data, maptype="china")
-    c.set_global_opts(title_opts=opts.TitleOpts(title="样本收集数量"), visualmap_opts=opts.VisualMapOpts(max_=1000))
+    c.set_global_opts(title_opts=opts.TitleOpts(title="样本收集数量"), visualmap_opts=opts.VisualMapOpts(max_=2000))
     c.set_series_opts(label_opts=opts.LabelOpts(is_show=False))
     c.render("map_base.html")
 
 
 def plot_area_individual(input_df):
     pre_df = copy.deepcopy(input_df)
-    pre_df.drop('unknown', inplace=True)
     pre_df.sort_values('individuals_total', inplace=True, ascending=False)
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -42,6 +44,7 @@ def plot_area_individual(input_df):
     ax.set_xlabel('地区',  fontsize=16)
     ax.set_ylabel('人数', fontsize=16)
     ax.set_title('各地区样本量及常染色体携带者人数', fontsize=20)
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
     plt.legend(loc="upper right", fontsize=16)
     plt.show()
 
@@ -79,7 +82,7 @@ def plot_area_pca(input_df, cut_line=1/200):
 
     fig, ax = plt.subplots(figsize=(8, 6))
     x = np.array(pre_df)
-    pca = PCA(n_components=2)
+    pca = PCA(n_components=3)
     ax.set_title('各地区单基因病携带频率主成分分析', fontsize=14)
     x_r = pca.fit(x).transform(x)
     ax.scatter(x_r[:, 0], x_r[:, 1], alpha=0.9, lw=2)
@@ -87,29 +90,7 @@ def plot_area_pca(input_df, cut_line=1/200):
     # 标注地域名称
     count = 0
     for text in pre_df.index:
-        if text == '河北':
-            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0]-0.015, x_r[count, 1]),
-                         fontsize=12)
-        elif text == '山西':
-            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0]-0.015, x_r[count, 1]),
-                         fontsize=12)
-        elif text == '河南':
-            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1]-0.006),
-                         fontsize=12)
-        elif text == '京津':
-            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1]+0.002),
-                         fontsize=12)
-        elif text == '安徽':
-            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1]-0.003),
-                         fontsize=12)
-        elif text == '山东':
-            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0], x_r[count, 1]+0.001),
-                         fontsize=12)
-        elif text == '黑龙江':
-            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0]-0.023, x_r[count, 1]-0.004),
-                         fontsize=12)
-        else:
-            plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0] + 0.001, x_r[count, 1] - 0.001),
+        plt.annotate(text, xy=(x_r[count, 0], x_r[count, 1]), xytext=(x_r[count, 0] + 0.001, x_r[count, 1] - 0.001),
                          fontsize=12)
         count += 1
 
@@ -227,9 +208,8 @@ def plot_area_area_heatmap(input_df):
             col_num = area_heatmap_list.index(col)
             pre_df.loc[arr, col] = np.linalg.norm([b-a for b,a in zip(data[arr_num], data[col_num])])
 
-    pre_df.index = pre_df.index.astype('category').set_categories(Area_sort_list, ordered=True)
-    pre_df.sort_index(inplace=True)
-    pre_df = pre_df[Area_sort_list]
+    pre_df.sort_values(by='广西', axis=0, inplace=True, ascending=False)
+    pre_df.sort_values(by='广西', axis=1, inplace=True, ascending=False)
 
     area_heatmap_list = pre_df.index.tolist()
 
@@ -238,7 +218,7 @@ def plot_area_area_heatmap(input_df):
     x = 1 - x/distance_max
 
     fig, ax = plt.subplots(figsize=(8, 6))
-    im = ax.imshow(x)
+    im = ax.imshow(x, cmap='Blues')
     # Show all ticks and label them with the respective list entries
     ax.set_xticks(np.arange(len(area_heatmap_list)), labels=area_heatmap_list)
     ax.set_yticks(np.arange(len(area_heatmap_list)), labels=area_heatmap_list)
@@ -276,6 +256,28 @@ def plot_area2_fst_clustermap(input_df):
     g = sns.clustermap(pre_df2, figsize=(8, 6), row_cluster=False, dendrogram_ratio=(0.2, 0.2), method='ward',
                    cbar_pos=(0.1, .2, .03, .4), cmap='YlGnBu_r', robust=True)
     plt.setp(g.ax_heatmap.xaxis.get_majorticklabels(), rotation=45)
-
     plt.show()
 
+
+def plot_ckmeans(input_df, k):
+    from pyckmeans import CKmeans
+    plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
+    plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
+    df = data_prepare.transform_area_gene_cf_matrix(input_df)
+    ckm = CKmeans(k=k, n_rep=100, p_samp=1, p_feat=0.9)
+    ckm.fit(df)
+    ckm_res = ckm.predict(df)
+    fig = ckm_res.plot(figsize=(8, 6))
+    plt.show()
+
+
+def plot_ckmeans_evaluation(input_df):
+    from pyckmeans import MultiCKMeans
+    plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
+    plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
+    df = data_prepare.transform_area_gene_cf_matrix(input_df)
+    mckm = MultiCKMeans(k=[2,3,4,5,6,7,8,9,10], n_rep=100, p_samp=1, p_feat=0.9)
+    mckm.fit(df)
+    mckm_res = mckm.predict(df)
+    mckm_res.plot_metrics(figsize=(10, 5))
+    plt.show()
