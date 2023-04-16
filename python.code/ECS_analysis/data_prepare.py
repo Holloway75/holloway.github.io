@@ -22,14 +22,15 @@ def get_sample_id(name, fid, data):
         return data.loc[df1.index[0], 'sample_id']
 
 
-def convert_in_samples(input_df, id_table, sex_label):
+def convert_in_samples(input_df, sex_label, id_table):
     """
     将原始数据中所有样本性别相同，转录到新df2, 每行为一个个体
     :param input_df: 原始数据
     :param id_table: Dataframe,包含name, fid与id(身份证前六位)
     :param sex_label: 原始数据中样本的性别，int，0 or 1
     """
-    columns_sample = ['name', 'sex', 'fid', 'area', 'hospital', 'carrier_status', 'gene', 'var_id']
+    columns_sample = ['name', 'sex', 'fid', 'area', 'hospital', 'carrier_status', 'gene', 'var_id', 'c_change',
+                      'p_change']
     df2 = pd.DataFrame(columns=columns_sample)
     sample_counts = 0
     all_lines = input_df.shape[0]
@@ -49,24 +50,35 @@ def convert_in_samples(input_df, id_table, sex_label):
         df2.loc[sample_counts, 'hospital'] = input_df.loc[index, '送检医院']
 
         auto_status, x_status, f8_inv_status, fmr1_status = 0, 0, 0, 0
-        sample_gene_list, sample_var_list = [], []
+        sample_gene_list, sample_var_list, c_change_list, p_change_list = [], [], [], []
 
-        if input_df.loc[index, '内含子1'] == '杂合变异' or input_df.loc[index, '内含子22'] == '杂合变异':
-            f8_inv_status = 1
-            sample_gene_list.append("F8")
-            sample_var_list.append("F8_inv")
+        if sex_label:
+            f8_inv_status = 0
+            fmr1_status = 0
+        else:
+            if input_df.loc[index, '内含子1'] == '杂合变异' or input_df.loc[index, '内含子22'] == '杂合变异':
+                f8_inv_status = 1
+                sample_gene_list.append("F8")
+                sample_var_list.append("F8_inv")
+                c_change_list.append("F8_inv")
+                p_change_list.append("F8_inv")
 
-        if not pd.isna(input_df.loc[index, 'CGG重复数目']):
-            cgg_num = input_df.loc[index, 'CGG重复数目'].split('|')
-            if int(cgg_num[0]) > 54 or int(cgg_num[1]) > 54:
-                fmr1_status = 1
-                sample_gene_list.append("FMR1")
-                sample_var_list.append(input_df.loc[index, 'CGG重复数目'])
+            if not pd.isna(input_df.loc[index, 'CGG重复数目']):
+                cgg_num = input_df.loc[index, 'CGG重复数目'].split(',')
+                cgg_max = max(int(cgg_num[0]), int(cgg_num[1]))
+                if cgg_max > 54:
+                    fmr1_status = 1
+                    sample_gene_list.append("FMR1")
+                    sample_var_list.append(input_df.loc[index, 'CGG重复数目'])
+                    c_change_list.append("FMR1_CGG重复数目%d" % cgg_max)
+                    p_change_list.append("FMR1_CGG重复数目%d" % cgg_max)
 
         if not pd.isna(input_df.loc[index, '基因']):
             for i in range(t):
                 sample_gene_list.append(input_df.loc[index+i, '基因'])
                 sample_var_list.append(input_df.loc[index+i, '变异ID'])
+                c_change_list.append(input_df.loc[index+i, '核苷酸改变'])
+                p_change_list.append(input_df.loc[index+i, '氨基酸改变'])
 
         if sum([(x in Auto_list) for x in sample_gene_list]):
             auto_status = 1
@@ -76,9 +88,57 @@ def convert_in_samples(input_df, id_table, sex_label):
         df2.loc[sample_counts, 'carrier_status'] = carrier_status
         df2.loc[sample_counts, 'gene'] = ":".join(sample_gene_list)
         df2.loc[sample_counts, 'var_id'] = ":".join(sample_var_list)
+        df2.loc[sample_counts, 'c_change'] = ":".join(c_change_list)
+        df2.loc[sample_counts, 'p_change'] = ":".join(p_change_list)
         index += t
         sample_counts += 1
     return df2
+
+
+def convert_in_couples(input_df):
+    columns = ['fid', 'member_count', 'gene_at_risk', 'gene_num_at_risk', 'female_name', 'female_carrier_status',
+               'female_gene', 'female_variant', 'male_name', 'male_carrier_status', 'male_gene', 'male_variant',
+               'x_gene', 'x_gene_num', 'hospital']
+    fid_list =list(set(input_df['fid'].tolist()))
+    df_couple = pd.DataFrame(columns=columns)
+
+    fam_count = 0
+    for i in fid_list:
+        df_tmp = input_df[input_df['fid'] == i]
+
+        df_couple.loc[fam_count, 'fid'] = i
+        df_couple.loc[fam_count, 'member_count'] = df_tmp.shape[0]
+        if df_tmp.shape[0] > 2:
+            print(df_tmp)
+            raise ValueError
+
+        for t in df_tmp.index:
+            if df_tmp.loc[t, 'sex']:
+                df_couple.loc[fam_count, 'male_name'] = df_tmp.loc[t, 'name']
+                df_couple.loc[fam_count, 'male_carrier_status'] = df_tmp.loc[t, 'carrier_status']
+                df_couple.loc[fam_count, 'male_gene'] = df_tmp.loc[t, 'gene']
+                df_couple.loc[fam_count, 'male_variant'] = df_tmp.loc[t, 'var_id']
+            else:
+                df_couple.loc[fam_count, 'female_name'] = df_tmp.loc[t, 'name']
+                df_couple.loc[fam_count, 'female_carrier_status'] = df_tmp.loc[t, 'carrier_status']
+                df_couple.loc[fam_count, 'female_gene'] = df_tmp.loc[t, 'gene']
+                df_couple.loc[fam_count, 'female_variant'] = df_tmp.loc[t, 'var_id']
+        if df_couple.loc[fam_count, 'member_count'] == 2:
+            if not pd.isna(df_couple.loc[fam_count, 'female_gene']):
+                female_gene_list = df_couple.loc[fam_count, 'female_gene'].split(':')
+                x_gene = list(set(female_gene_list) & set(Xlink_list))
+                df_couple.loc[fam_count, 'x_gene'] = ":".join(x_gene)
+                df_couple.loc[fam_count, 'x_gene_num'] = len(x_gene)
+                if not pd.isna(df_couple.loc[fam_count, 'male_gene']):
+                    male_gene_list = df_couple.loc[fam_count, 'male_gene'].split(':')
+                    gene_risk_list = list(set(female_gene_list) & set(male_gene_list))
+                    df_couple.loc[fam_count, 'gene_at_risk'] = ":".join(gene_risk_list)
+                    df_couple.loc[fam_count, 'gene_num_at_risk'] = len(gene_risk_list)
+        df_couple.loc[fam_count, 'hospital'] = df_tmp['hospital'].tolist()[0]
+        fam_count += 1
+    return df_couple
+
+
 
 
 def convert_in_areas(df):
@@ -114,6 +174,30 @@ def convert_in_areas(df):
 
         province_count += 1
     return df2
+
+
+def convert_in_hospital(input_df):
+    df1 = copy.deepcopy(input_df)
+    df1 = df1[df1['member_count'] == 2]
+    columns=['hospital', 'reports', 'risk_couples', 'total_rate', 'auto_risk', 'auto_rate', 'x_couples', 'x_rate']
+    hospital_list = list(set(df1['hospital'].tolist()))
+    df3 = pd.DataFrame(columns=columns)
+    hospital_count = 0
+    for i in hospital_list:
+        df_tmp = df1[df1['hospital'] == i]
+        reports = df_tmp.shape[0]
+        df3.loc[hospital_count, 'hospital'] = i
+        df3.loc[hospital_count, 'reports'] = reports
+        df3.loc[hospital_count, 'risk_couples'] = df_tmp[(df_tmp['x_gene_num'] > 0) |
+                                                         (df_tmp['gene_num_at_risk'] > 0)].shape[0]
+        df3.loc[hospital_count, 'total_rate'] = df3.loc[hospital_count, 'risk_couples'] / reports
+        df3.loc[hospital_count, 'auto_risk'] = df_tmp[(df_tmp['gene_num_at_risk'] > 0)].shape[0]
+        df3.loc[hospital_count, 'auto_rate'] = df3.loc[hospital_count, 'auto_risk'] / reports
+        df3.loc[hospital_count, 'x_couples'] = df_tmp[(df_tmp['x_gene_num'] > 0)].shape[0]
+        df3.loc[hospital_count, 'x_rate'] = df3.loc[hospital_count, 'x_couples'] / reports
+        hospital_count += 1
+    return df3
+
 
 
 def data2plot_gene(input_df, cut_line=1/200, area=None):

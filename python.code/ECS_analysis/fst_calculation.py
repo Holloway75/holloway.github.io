@@ -74,7 +74,8 @@ def data_prepare_for_heatmap(pre_df):
     for arr in area_heatmap_list:
         for col in area_heatmap_list:
             pre_df2.loc[arr, col] = get_average_fst_from_area2(input_df, arr, col)
-    pre_df2.index = pre_df2.index.astype('category').set_categories(Area_sort_list, ordered=True)
-    pre_df2.sort_index(inplace=True)
-    return pre_df2[Area_sort_list]
+
+    pre_df2.sort_values(by='广西', axis=0, inplace=True, ascending=False)
+    pre_df2.sort_values(by='广西', axis=1, inplace=True, ascending=False)
+    return pre_df2
 
