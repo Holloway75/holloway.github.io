@@ -230,9 +230,9 @@ def plot_area_area_heatmap(input_df):
             col_num = area_heatmap_list.index(col)
             pre_df.loc[arr, col] = np.linalg.norm([b-a for b,a in zip(data[arr_num], data[col_num])])
 
-    pre_df.index = pre_df.index.astype('category').set_categories(Area_sort_list, ordered=True)
-    pre_df.sort_index(inplace=True)
-    pre_df = pre_df[Area_sort_list]
+    pre_df.sort_values(by='桂琼', inplace=True, ascending=False)
+    pre_df.sort_values(by='桂琼',  axis=1, inplace=True, ascending=False)
+
 
     area_heatmap_list = pre_df.index.tolist()
 
@@ -241,7 +241,7 @@ def plot_area_area_heatmap(input_df):
     x = 1 - x/distance_max
 
     fig, ax = plt.subplots(figsize=(8, 6))
-    im = ax.imshow(x)
+    im = ax.imshow(x, cmap='coolwarm')
     # Show all ticks and label them with the respective list entries
     ax.set_xticks(np.arange(len(area_heatmap_list)), labels=area_heatmap_list)
     ax.set_yticks(np.arange(len(area_heatmap_list)), labels=area_heatmap_list)
@@ -260,10 +260,10 @@ def plot_area2_fst_heatmap(input_df):
     pre_df2 = fst.data_prepare_for_heatmap(input_df)
 
     mask = np.triu(np.ones_like(pre_df2, dtype=bool), 1)    # 遮盖上三角
-    fig, ax = plt.subplots(figsize=(16, 9))
+    fig, ax = plt.subplots(figsize=(8, 6))
     sns.heatmap(pre_df2, mask=mask, cmap='coolwarm_r', robust=True, annot=True,
                 annot_kws={'size': 9, 'weight':'bold'},
-                fmt='.4f', square=True, linewidths=.5, cbar_kws={"shrink": .5})
+                fmt='.3f', square=True, linewidths=.5, cbar_kws={"shrink": .5})
 
     # Rotate the tick labels and set their alignment.
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")

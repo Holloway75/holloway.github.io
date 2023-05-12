@@ -12,14 +12,14 @@ def get_keys(dic, val):
     return val
 
 
-def get_sample_id(name, fid, data):
+def get_ecs_id(name, fid, data):
     df1 = data[(data.fid == fid) & (data.name == name)]
     if not df1.shape[0]:
         return "unknown"
     elif df1.shape[0] > 1:
         raise ValueError
     else:
-        return data.loc[df1.index[0], 'sample_id']
+        return data.loc[df1.index[0], 'ecs_id']
 
 
 def convert_in_samples(input_df, sex_label, id_table):
@@ -199,7 +199,6 @@ def convert_in_hospital(input_df):
     return df3
 
 
-
 def data2plot_gene(input_df, cut_line=1/200, area=None):
     if area is not None:
         pre_df = input_df.loc[area]
@@ -306,6 +305,5 @@ def transform_data_for_stats(input_df, df_id):
             for t in glist:
                 df_sample.loc[i, t] = 1
     return df_sample
-
 
 
