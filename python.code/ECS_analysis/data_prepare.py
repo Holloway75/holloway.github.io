@@ -139,8 +139,6 @@ def convert_in_couples(input_df):
     return df_couple
 
 
-
-
 def convert_in_areas(df):
     constant_column = ['area', 'carriers_auto', 'carriers_x', 'carriers_total',
                        'individuals_male', 'individuals_total']

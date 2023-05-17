@@ -1,3 +1,4 @@
+import copy
 import os
 import numpy as np
 from addresss import *
@@ -9,21 +10,25 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 
 
-def to_compare(input_df, pc_num):
+def to_compare(input_df_, pc_num):
+    input_df = copy.deepcopy(input_df_)
     sample_index_list = input_df.index.tolist()
     pc_list = ['PC%d' % i for i in range(1, pc_num+1)]
     df_cor_matrx = pd.DataFrame(columns=sample_index_list)
+    df_gene_filtered_result = pd.DataFrame(index=Auto_list, columns=sample_index_list, dtype='int8')
     for arr in sample_index_list:
-        print(arr)
         arr_loc = np.array(input_df.loc[arr, pc_list])
         for col in sample_index_list:
             col_loc = np.array(input_df.loc[col, pc_list])
             df_cor_matrx.loc[arr, col] = np.linalg.norm(arr_loc-col_loc)
         nearest_1000_list = df_cor_matrx.loc[arr].sort_values().index.tolist()[0:1000]
         input_df.loc[arr, 'nearest_1000_list'] = ":".join(nearest_1000_list)
-        print(input_df)
-        exit()
-
+        df_tmp = input_df[[(i in nearest_1000_list) for i in input_df.index]]
+        gene_list = df_tmp[~df_tmp['gene'].isna()]['gene'].tolist()
+        df_gene_filtered_result[arr] = [gene_list.count(i) for i in Auto_list]
+    df_cor_matrx.to_csv('cor_matrix_pc%d.csv'%pc_num, index=True, encoding='utf_8_sig')
+    input_df.to_csv('sample.nearest_1000_by-pc%d.csv' % pc_num, index=True, encoding='utf_8_sig')
+    df_gene_filtered_result.to_csv('gene_filtered_result_pc%d.csv', index=True, encoding='utf_8_sig')
 
 
 if __name__ == '__main__':
