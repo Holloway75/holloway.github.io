@@ -32,3 +32,4 @@ def calculate_odds_ratio(input_df, control_label, case_label, gene, label_column
     ci = [np.exp(np.log(rr_value)-1.96*se_ln), np.exp(np.log(rr_value)+1.96*se_ln)]
     result = Result(rr_value, ci, case_label, control_label)
     return result
+
