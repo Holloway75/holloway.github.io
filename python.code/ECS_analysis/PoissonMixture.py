@@ -1,8 +1,8 @@
 import copy
-from scipy.special import factorial
 from scipy.stats import poisson
 import numpy as np
 from sklearn import cluster
+from scipy.special import logsumexp
 
 
 __all__ = [
@@ -58,6 +58,19 @@ class Poisson_Mixture:
         nk = self.resp.sum(axis=0) + 10 * np.finfo(self.resp.dtype).eps
         self.weights = nk / self.n_samples
         self.params = np.dot(self.resp.T, X) / nk[:, np.newaxis]
+
+    def _estimate_log_prob(self, X, par):
+        return -par.T + X * np.log(par.T) - np.array([np.log(np.arange(1, k+1)).sum() for k in X]).reshape(-1, 1)
+
+    def _estimate_log_weights(self):
+        return np.log(self.weights)
+
+    def _estimate_weighted_log_prob(self, X, par):
+        return self._estimate_log_prob(X, par) + self._estimate_log_weights()
+
+    def score(self, X):
+        log_prob_sum = logsumexp(self._estimate_weighted_log_prob(X, self.params), axis=1)
+        return  log_prob_sum.mean()
 
     def bic(self, X):
         k = self.n_components + self.n_components - 1

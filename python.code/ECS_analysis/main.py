@@ -1,5 +1,4 @@
 import copy
-from scipy.special import factorial
 import numpy as np
 from sklearn.cluster import KMeans
 from addresss import *
@@ -74,5 +73,9 @@ def max_gene_freq():
 
 
 if __name__ == '__main__':
-    df = pd.read_excel('D:/pigfile.xlsx
-    print(df)
+    df = pd.read_csv('D:\我的坚果云\ECS_mid\corelation.analysis\gene_filtered_result_pc20.csv', index_col=0)
+    data = np.array(df['GJB2']).reshape(-1, 1)
+    mx = Poisson_Mixture(n_components=1).fit(data)
+
+    print(mx.bic(data))
+
