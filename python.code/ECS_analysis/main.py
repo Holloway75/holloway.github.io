@@ -1,11 +1,17 @@
 import copy
+import os
+import multiprocessing
+import itertools
+import matplotlib.ticker as ticker
 import numpy as np
+from scipy import linalg
 from sklearn.cluster import KMeans
 from addresss import *
 import pandas as pd
 import seaborn as sns
+import matplotlib as mpl
 from matplotlib import pyplot as plt
-from scipy.stats import poisson
+from sklearn.mixture import GaussianMixture
 from PoissonMixture import Poisson_Mixture
 
 
@@ -72,10 +78,63 @@ def max_gene_freq():
     df.to_csv('max_freq1.csv', index=True, encoding='utf_8_sig')
 
 
+def poisson_analysis(data, gene, pc_num):
+    columns = ['n_components', 'parameters', 'weights', 'bic']
+    df = pd.DataFrame(columns=columns)
+    for i in np.arange(1,8):
+        mx = Poisson_Mixture(n_components=i).fit(data)
+        df.loc[i, 'n_components'] = mx.n_components
+        df.loc[i, 'parameters'] = ":".join(mx.params.reshape(-1).astype('str'))
+        df.loc[i, 'weights'] = ":".join(mx.weights.reshape(-1).astype('str'))
+        df.loc[i, 'bic'] = mx.bic(data)
+    if gene == 'HBA1/HBA2':
+        df.to_csv('D:\我的坚果云\ECS_mid\gene_distribution_pc%d\HBA1_HBA2.poisson_mixture.csv'%pc_num, encoding='utf_8_sig')
+    else:
+        df.to_csv('D:\我的坚果云\ECS_mid\gene_distribution_pc%d\%s.poisson_mixture.csv' % (pc_num, gene), encoding='utf_8_sig')
+
+
 if __name__ == '__main__':
-    df = pd.read_csv('D:\我的坚果云\ECS_mid\corelation.analysis\gene_filtered_result_pc20.csv', index_col=0)
-    data = np.array(df['GJB2']).reshape(-1, 1)
-    mx = Poisson_Mixture(n_components=1).fit(data)
 
-    print(mx.bic(data))
 
+    pc_num = 1
+
+    df_pc = pd.read_csv('D:\我的坚果云\ECS_mid\corelation.analysis\max_freq1.csv', index_col=0)
+    gene_list = df_pc[df_pc['pc%d'%pc_num]>0.005].index.tolist()
+
+    # # 混合模型分析
+    # gene_list += ["0"] * (16 - len(gene_list) % 16)
+    # gene_arr = np.array(gene_list).reshape(-1, 16)
+    #
+    # df = pd.read_csv('D:\cor_matirx\gene_filtered_result_pc%d.csv' % pc_num, index_col=0)
+    # for batch in gene_arr:
+    #     process = []
+    #     for gene in batch:
+    #         if gene != "0":
+    #             data = np.array(df[gene]).reshape(-1, 1)
+    #             process.append(multiprocessing.Process(target=poisson_analysis, args=(data, gene, pc_num)))
+    #     for p in process:
+    #         p.start()
+    #     for p in process:
+    #         p.join()
+    #     del process
+
+    # dif_list = []
+    # for gene in gene_list:
+    #     if gene == 'HBA1/HBA2':
+    #         df = pd.read_csv('HBA1_HBA2.poisson_mixture.csv', index_col=0)
+    #     else:
+    #         df = pd.read_csv('%s.poisson_mixture.csv'%gene, index_col=0)
+    #     if df['bic'].tolist().index(df['bic'].min()) > 1:
+    #         dif_list.append(gene)
+
+    # 绘制子集中基于的携带者频数分布图
+    df = pd.read_csv('D:\cor_matirx\gene_filtered_result_pc%d.csv'%pc_num, index_col=0)
+    os.chdir('D:\我的坚果云\ECS_mid\gene_distribution_pc%d'%pc_num)
+    for i in gene_list:
+        g = sns.displot(data=df, x=i, kde=True, discrete=True)
+        g.ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+        if i == "HBA1/HBA2":
+            plt.savefig('HBA1_HBA2.png', dpi=300)
+        else:
+            plt.savefig('%s.png'%i, dpi=300)
+    
