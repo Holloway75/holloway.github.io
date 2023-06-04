@@ -1,5 +1,6 @@
 import copy
 import os
+import math
 import multiprocessing
 import itertools
 import matplotlib.ticker as ticker
@@ -11,7 +12,6 @@ import pandas as pd
 import seaborn as sns
 import matplotlib as mpl
 from matplotlib import pyplot as plt
-from sklearn.mixture import GaussianMixture
 from PoissonMixture import Poisson_Mixture
 
 
@@ -93,11 +93,13 @@ def poisson_analysis(data, gene, pc_num):
         df.to_csv('D:\我的坚果云\ECS_mid\gene_distribution_pc%d\%s.poisson_mixture.csv' % (pc_num, gene), encoding='utf_8_sig')
 
 
+def poisson(lambda_, k, weight):
+    return weight * 9949 * (lambda_**(k)) * (np.exp(-lambda_)) / math.factorial(k)
+
+
+
 if __name__ == '__main__':
-
-
     pc_num = 1
-
     df_pc = pd.read_csv('D:\我的坚果云\ECS_mid\corelation.analysis\max_freq1.csv', index_col=0)
     gene_list = df_pc[df_pc['pc%d'%pc_num]>0.005].index.tolist()
 
@@ -116,25 +118,43 @@ if __name__ == '__main__':
     #         p.start()
     #     for p in process:
     #         p.join()
-    #     del process
 
-    # dif_list = []
+    # # 携带频率存在人群差异的基因
+    # os.chdir('D:\我的坚果云\ECS_mid\gene_distribution_pc%d' % pc_num)
+    # df_dif_gene = pd.DataFrame(columns=['average_cf', 'best_components', 'cf_list', "weights", 'highest_cf'])
     # for gene in gene_list:
     #     if gene == 'HBA1/HBA2':
     #         df = pd.read_csv('HBA1_HBA2.poisson_mixture.csv', index_col=0)
     #     else:
     #         df = pd.read_csv('%s.poisson_mixture.csv'%gene, index_col=0)
-    #     if df['bic'].tolist().index(df['bic'].min()) > 1:
-    #         dif_list.append(gene)
+    #     best_components = df['bic'].tolist().index(df['bic'].min()) + 1
+    #     df_dif_gene.loc[gene, 'average_cf'] = df.loc[1, 'parameters']
+    #     df_dif_gene.loc[gene, 'best_components'] = best_components
+    #     df_dif_gene.loc[gene, 'cf_list'] = df.loc[best_components, 'parameters']
+    #     df_dif_gene.loc[gene, 'weights'] = df.loc[best_components, 'weights']
+    #     df_dif_gene.loc[gene, 'highest_cf'] = max(df.loc[best_components, 'parameters'].split(":"))
+    # df_dif_gene.to_csv('genes.different_cf.pc%d.csv'%pc_num, encoding='utf_8_sig', index=True)
 
     # 绘制子集中基于的携带者频数分布图
     df = pd.read_csv('D:\cor_matirx\gene_filtered_result_pc%d.csv'%pc_num, index_col=0)
     os.chdir('D:\我的坚果云\ECS_mid\gene_distribution_pc%d'%pc_num)
+    df_pos = pd.read_csv('genes.different_cf.pc1.csv', index_col=0)
+
     for i in gene_list:
-        g = sns.displot(data=df, x=i, kde=True, discrete=True)
+        g = sns.displot(data=df, x=i, kde=False, discrete=True)
         g.ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+
+        par_list = df_pos.loc[i, 'cf_list'].split(":")
+        weight_list = df_pos.loc[i, 'weights'].split(":")
+        colors = plt.get_cmap('RdBu', len(par_list))
+        for par,weight in zip(par_list, weight_list):
+            y = [poisson(float(par), int(k), float(weight)) for k in np.arange(0, df[i].max()+1)]
+            g.ax.plot(range(int(df[i].max()+1)), y, c=colors([par_list.index(par)]))
+        plt.show()
+        exit()
         if i == "HBA1/HBA2":
             plt.savefig('HBA1_HBA2.png', dpi=300)
         else:
             plt.savefig('%s.png'%i, dpi=300)
     
+
