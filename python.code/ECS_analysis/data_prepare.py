@@ -3,6 +3,12 @@ import fst_calculation as fst
 import pandas as pd
 import copy
 import numpy as np
+import re
+
+
+__all__ = [
+    'convert_in_samples'
+]
 
 
 def get_keys(dic, val):
@@ -12,22 +18,13 @@ def get_keys(dic, val):
     return val
 
 
-def get_ecs_id(name, fid, data):
-    df1 = data[(data.fid == fid) & (data.name == name)]
-    if not df1.shape[0]:
-        return "unknown"
-    elif df1.shape[0] > 1:
-        raise ValueError
-    else:
-        return data.loc[df1.index[0], 'ecs_id']
-
-
-def convert_in_samples(input_df, sex_label, id_table):
+def convert_in_samples(input_df, sex_label):
     """
-    将原始数据中所有样本性别相同，转录到新df2, 每行为一个个体
-    :param input_df: 原始数据
-    :param id_table: Dataframe,包含name, fid与id(身份证前六位)
-    :param sex_label: 原始数据中样本的性别，int，0 or 1
+    项目导出文件转换格式，文件内样本性别相同，
+    :param input_df: 项目导出文件，0013为女性，0014为男性，每个样本占用行数为检出变异数，至少1行，单个样本可能占用多行
+    :param sex_label: 性别标签，男性为'1'，女性为'0'
+    :param id_table: 包含姓名、家系id、身份证前六位的表
+    :return:转化后格式，每个样本占1行
     """
     columns_sample = ['name', 'sex', 'fid', 'area', 'hospital', 'carrier_status', 'gene', 'var_id', 'c_change',
                       'p_change']
@@ -45,17 +42,12 @@ def convert_in_samples(input_df, sex_label, id_table):
         df2.loc[sample_counts, 'name'] = input_df.loc[index, '姓名']
         df2.loc[sample_counts, 'sex'] = sex_label
         df2.loc[sample_counts, 'fid'] = input_df.loc[index, '家系编号']
-        df2.loc[sample_counts, 'area'] = get_area_from_id(input_df.loc[index, '姓名'], input_df.loc[index, '家系编号'],
-                                                          id_table)
         df2.loc[sample_counts, 'hospital'] = input_df.loc[index, '送检医院']
 
         auto_status, x_status, f8_inv_status, fmr1_status = 0, 0, 0, 0
         sample_gene_list, sample_var_list, c_change_list, p_change_list = [], [], [], []
 
-        if sex_label:
-            f8_inv_status = 0
-            fmr1_status = 0
-        else:
+        if not sex_label:
             if input_df.loc[index, '内含子1'] == '杂合变异' or input_df.loc[index, '内含子22'] == '杂合变异':
                 f8_inv_status = 1
                 sample_gene_list.append("F8")
@@ -64,8 +56,7 @@ def convert_in_samples(input_df, sex_label, id_table):
                 p_change_list.append("F8_inv")
 
             if not pd.isna(input_df.loc[index, 'CGG重复数目']):
-                cgg_num = input_df.loc[index, 'CGG重复数目'].split(',')
-                cgg_max = max(int(cgg_num[0]), int(cgg_num[1]))
+                cgg_max = max(list(map(int, list(filter(None, re.split('[^0-9]', input_df.loc[index, 'CGG重复数目']))))))
                 if cgg_max > 54:
                     fmr1_status = 1
                     sample_gene_list.append("FMR1")
@@ -140,37 +131,31 @@ def convert_in_couples(input_df):
 
 
 def convert_in_areas(df):
-    constant_column = ['area', 'carriers_auto', 'carriers_x', 'carriers_total',
+    constant_column = ['carriers_auto', 'carriers_x', 'carriers_total',
                        'individuals_male', 'individuals_total']
     title_gene_list = Auto_list + Xlink_list
     column = constant_column + title_gene_list
     areas = list(set(df.area.tolist()))
-    df2 = pd.DataFrame(np.zeros((len(areas), len(column))), columns=column)
-    province_count = 0
-    for x in areas:
-        df2.loc[province_count, 'area'] = x
-        df_x = df[df.area == x]
+    df2 = pd.DataFrame(index=areas, columns=column)
+    df2.index.name = 'area'
+    for area in df2.index:
+        df_tmp = df[df.area == area]
 
         # 计数该地区中 常染色体病携带者 x携带者 总携带者人数 男性人数 总人数
-        status_list = df_x.carrier_status.tolist()
-        df2.loc[province_count, 'carriers_auto'] = len([sam for sam in status_list if (sam & 8)])
-        df2.loc[province_count, 'carriers_x'] = len([sam for sam in status_list if (sam & 4)])
-        df2.loc[province_count, 'carriers_total'] = len([sam for sam in status_list if sam])
-        df2.loc[province_count, 'individuals_male'] = df_x.sex.sum()
-        df2.loc[province_count, 'individuals_total'] = len(status_list)
+        status_list = df_tmp.carrier_status.tolist()
+        df2.loc[area, 'carriers_auto'] = len([sam for sam in status_list if (sam & 8)])
+        df2.loc[area, 'carriers_x'] = len([sam for sam in status_list if (sam & 4)])
+        df2.loc[area, 'carriers_total'] = len([sam for sam in status_list if sam])
+        df2.loc[area, 'individuals_male'] = df_tmp.sex.sum()
+        df2.loc[area, 'individuals_total'] = len(status_list)
 
         # 计数该地区中每个基因的出现次数
-        raw_str_list = df_x.gene.tolist()
-        str_list = [gene for gene in raw_str_list if isinstance(gene, str)]         # 去除nan
+        df_tmp = df_tmp[~df_tmp['gene'].isna()]
         gene_list = []
-        for strs in str_list:
-            a = list(set(strs.split(':')))         # 拆分字符串形式的基因“gene1:gene2：gene3”
-            gene_list += a
-        gene_list_rmdup = list(set(gene_list))
-        for gene in gene_list_rmdup:
-            df2.loc[province_count, gene] = gene_list.count(gene)
-
-        province_count += 1
+        for i in df_tmp.index:
+            gene_list += df_tmp.loc[i, 'gene'].split(":")
+        for gene in title_gene_list:
+            df2.loc[area, gene] = gene_list.count(gene)
     return df2
 
 
@@ -289,8 +274,8 @@ def transform_data_for_stats(input_df, df_id):
     df_sample.area = input_df.area
 
     # 获取main_area和second_area
-    main_area = [get_keys(Area_counterparts2, i) for i in df_sample['area']]
-    second_area = [get_keys(Area_counterparts, i) for i in df_sample['area']]
+    main_area = [get_keys(area_counterparts2, i) for i in df_sample['area']]
+    second_area = [get_keys(area_counterparts, i) for i in df_sample['area']]
     id_list = [get_sample_id(a, b, df_id) for a, b in zip(input_df.name, input_df.fid)]
     df_sample['main_area'] = main_area
     df_sample['second_area'] = second_area

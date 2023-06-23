@@ -5,14 +5,11 @@ __all__ = [
     'area_counterparts2',
     'Auto_list',
     'Xlink_list',
-    'get_area_from_id',
+    'id_province',
     'province_name_simple_to_full',
-    'Area_sort_list'
 ]
 
-import pandas as pd
-
-ID_province = {
+id_province = {
     "11": "北京",
     "12": "天津",
     '13': '河北',
@@ -61,30 +58,22 @@ area_counterparts = {
     '桂琼': ['广西', '海南'],
     '浙沪': ['浙江', '上海'],
     '京津': ['北京', '天津'],
+    '闽台': ['福建', '台湾'],
+    '陕甘宁': ['陕西', '甘肃', '宁夏'],
     '云贵': ['云南', '贵州'],
-    '川渝': ['重庆', '四川'],
-    '赣闽台': ['江西', '福建', '台湾'],
-    '西北': ['陕西', '宁夏', '新疆', '甘肃', '青海', '西藏'],
+    '新藏青': ['新疆', '青海', '西藏'],
 }
 area_counterparts2 = {
-    '华南': ['广东', '广西', '海南'],
-    '南方': ['浙江', '上海', '江西', '福建', '台湾', '重庆', '湖北', '云南', '贵州', '四川', '湖南', '江苏'],
-    '北方': ['北京', '天津','内蒙古', '吉林','陕西', '宁夏', '新疆', '甘肃', '青海', '西藏', '山东', '辽宁', '黑龙江', '河北',
-             '安徽', '山西', '河南'],
+    'far south': ['广东', '广西', '海南'],
+    'south': ['浙江', '上海', '江西', '福建', '台湾', '重庆', '湖北', '云南', '贵州', '四川', '湖南'],
+    'north': ['北京', '天津', '内蒙古', '吉林', '陕西', '宁夏', '新疆', '甘肃', '青海', '西藏', '山东', '辽宁', '黑龙江', '河北',
+              '江苏', '安徽', '山西', '河南'],
 }
-Area_sort_list = ['西北', '黑龙江', '蒙吉', '山西', '河南', '河北', '山东', '辽宁', '安徽', '京津', '江苏', '渝鄂',
-       '浙沪', '湖南', '云贵川', '赣闽台', '华南']
-
 os.chdir('D:\我的坚果云\ECS_mid')
 
 Auto_list = open('gene.autosome.list').read().split()
 
 Xlink_list = open('gene.x_link.list').read().split()
-
-Gene_over_200 = ['ABCG5', 'ACADM', 'ACADS', 'ACADSB', 'AGXT', 'ALPL', 'ATP7B', 'CAPN3', 'CEP290', 'CFTR', 'CYP21A2',
-                  'CYP27A1', 'ETFDH', 'G6PC1', 'GAA', 'GALC', 'GJB2', 'HBA1/HBA2', 'HBA2', 'HBB', 'MCPH1', 'MMACHC',
-                  'MMUT', 'PAH', 'PKHD1', 'POLG', 'PTS', 'SLC22A5', 'SLC25A13', 'SLC26A4', 'SMN1', 'TYR', 'UGT1A1',
-                  'USH2A', 'G6PD']
 
 
 def province_name_simple_to_full(short_name):
@@ -100,14 +89,4 @@ def province_name_simple_to_full(short_name):
         raise ValueError
 
 
-def get_area_from_id(name, fid, data):
-    df1 = data[(data.fid == fid) & (data.name == name)]
-    if not df1.shape[0]:
-        return "unknown"
-    elif df1.shape[0] > 1:
-        raise ValueError
-    elif pd.isna(data.loc[df1.index[0], 'id']):
-        return 'unknown'
-    else:
-        id_ = str(data.loc[df1.index[0], 'id'])
-        return ID_province[id_[0:2]]
+

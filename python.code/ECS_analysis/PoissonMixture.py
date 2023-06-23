@@ -4,11 +4,11 @@ from scipy.special import logsumexp
 import warnings
 
 __all__ = [
-    'Poisson_Mixture'
+    'PoissonMixture'
 ]
 
 
-class Poisson_Mixture:
+class PoissonMixture:
     def __init__(
             self,
             n_components=1,
