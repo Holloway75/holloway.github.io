@@ -64,16 +64,18 @@ area_counterparts = {
     '新藏青': ['新疆', '青海', '西藏'],
 }
 area_counterparts2 = {
-    'far south': ['广东', '广西', '海南'],
-    'south': ['浙江', '上海', '江西', '福建', '台湾', '重庆', '湖北', '云南', '贵州', '四川', '湖南'],
-    'north': ['北京', '天津', '内蒙古', '吉林', '陕西', '宁夏', '新疆', '甘肃', '青海', '西藏', '山东', '辽宁', '黑龙江', '河北',
+    'Far South': ['广东', '广西', '海南'],
+    'South': ['浙江', '上海', '江西', '福建', '台湾', '重庆', '湖北', '云南', '贵州', '四川', '湖南'],
+    'North': ['北京', '天津', '内蒙古', '吉林', '陕西', '宁夏', '新疆', '甘肃', '青海', '西藏', '山东', '辽宁', '黑龙江', '河北',
               '江苏', '安徽', '山西', '河南'],
 }
 os.chdir('D:\我的坚果云\ECS_mid')
 
-Auto_list = open('gene.autosome.list').read().split()
+with open('gene.autosome.list', 'r') as f:
+    Auto_list = f.read().splitlines()
 
-Xlink_list = open('gene.x_link.list').read().split()
+with open('gene.x_link.list', 'r') as f:
+    Xlink_list = f.read().splitlines()
 
 
 def province_name_simple_to_full(short_name):

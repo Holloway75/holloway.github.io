@@ -183,15 +183,13 @@ def convert_in_hospital(input_df):
 
 
 def data2plot_gene(input_df, cut_line=1/200, area=None):
-    if area is not None:
-        pre_df = input_df.loc[area]
-    else:
-        pre_df = copy.deepcopy(input_df)
-    if cut_line:
-        pre_df = fst.filter_by_cf(pre_df, cut_line)
+    pre_df = copy.deepcopy(input_df)
 
     # 增加一行“total”  统计总人数
-    pre_df.loc['total'] = [sum(pre_df[t]) for t in pre_df.columns]
+    if area:
+        pre_df.loc['total'] = pre_df.loc[area]
+    else:
+        pre_df.loc['total'] = [sum(pre_df[t]) for t in pre_df.columns]
     male_counts = pre_df.loc['total', 'individuals_male']
     total_counts = pre_df.loc['total', 'individuals_total']
     female_counts = total_counts - male_counts
@@ -209,6 +207,8 @@ def data2plot_gene(input_df, cut_line=1/200, area=None):
     # 去除人数相关的列，只保留基因，并以携带频率排序
     pre_df = pre_df[glist]
     pre_df.sort_values(by='total', inplace=True, axis=1)
+    if cut_line:
+        pre_df = pre_df.T[pre_df.T['total'] > cut_line].T
     return pre_df
 
 

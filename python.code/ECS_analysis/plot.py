@@ -5,12 +5,12 @@ import data_prepare
 from pyecharts import options as opts
 from pyecharts.charts import Map
 from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans
 from fractions import Fraction
-from sklearn.metrics import silhouette_score, calinski_harabasz_score
+
 import copy
 import pandas as pd
 import numpy as np
+from adjustText import adjust_text
 from addresss import *
 
 
@@ -27,7 +27,6 @@ def plot_china_map(input_df):
 
 def plot_area_individual(input_df):
     pre_df = copy.deepcopy(input_df)
-    pre_df.drop('unknown', inplace=True)
     pre_df.sort_values('individuals_total', inplace=True, ascending=False)
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -73,53 +72,32 @@ def plot_gene(input_df, cut_line=1/200, area=None):
     if gene_num > 60:
         ax.set_yticks([])  # 基因数大于60，不显示基因名
     plt.show()
+    return pre_df
 
 
-def plot_kmeans_pca(input_df: pd.DataFrame, k=3, cut_line=1/200, picture=True):
+def plot_kmeans_pca(input_df: pd.DataFrame, cut_line=1/200):
     pre_df = data_prepare.transform_area_gene_cf_matrix(input_df, cut_line)
     x = np.array(pre_df)
-    y_pred = KMeans(n_clusters=k, random_state=3).fit_predict(x)
 
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
     plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
 
-    if picture:
-        pca = PCA(n_components=2)
-        x_r = pca.fit_transform(x)
-        df = pd.DataFrame(index=pre_df.index, columns=['PC1', 'PC2', 'area'], data=np.hstack((x_r, y_pred.reshape(-1,1))))
-        df.sort_values(by='PC1', inplace=True)
-        current_palette = sns.color_palette()
+    pca = PCA(n_components=2)
+    x_r = pca.fit_transform(x)
+    df = pd.DataFrame(index=pre_df.index, columns=['PC1', 'PC2'], data=x_r)
+    for i in df.index:
+        if i in area_counterparts.keys():
+            df.loc[i, 'main area'] = data_prepare.get_keys(area_counterparts2, area_counterparts[i][0])
+        else:
+            df.loc[i, 'main area'] = data_prepare.get_keys(area_counterparts2, i)
+    df.sort_values(by='PC1', inplace=True)
+    current_palette = sns.color_palette()
 
-        north_name = "far south: " + ",".join(df[df['area'] == 1].index)
-        south_name = "north: " + ",".join(df[df['area'] == 0].index)
-        far_sor = 'south: ' + ",".join(df[df['area'] == 2].index)
-        df['area'].replace({1:north_name, 0:south_name, 2:far_sor}, inplace=True)
-        plt.figure(figsize=(16, 9))
-        sns.scatterplot(df, x='PC1', y='PC2', hue='area', palette=current_palette)
-
-        for i in df.index:
-            plt.annotate(i, xy=(df.loc[i, 'PC1'], df.loc[i, 'PC2']), fontsize=12)
-        plt.show()
-    else:
-        return [silhouette_score(x, y_pred), calinski_harabasz_score(x, y_pred)]
-
-
-def kmeans_evaluations(input_df, cut_line=1/200):
-    sil, cal = [], []
-    for i in range(2, 11):
-        evaluations_index_list = plot_kmeans_pca(input_df, k=i, cut_line=cut_line, picture=False)
-        sil.append(evaluations_index_list[0])
-        cal.append(evaluations_index_list[1])
-    fig, ax1 = plt.subplots(figsize=(8, 6))
-    x = [str(i) for i in range(2, 11)]
-    ax1.plot(x, sil,  'bo-', label='silhouette score')
-    ax2 = ax1.twinx()
-    ax2.plot(x, cal, 'ro-', label='calinski harabasz score')
-    fig.legend(labels=('Silhouette','Calinski Harabasz'), loc=(0.65, 0.75))
-    ax1.set_xlabel('Groups', fontsize=12)
-    ax1.set_ylabel('Silhouette', fontsize=12)
-    ax2.set_ylabel('Calinski Harabasz', fontsize=12)
-    ax1.set_title('KMeans Evaluation', fontsize=14)
+    plt.figure(figsize=(8, 6))
+    sns.scatterplot(df, x='PC1', y='PC2', hue='main area', palette=current_palette)
+    new_texts = [plt.text(x_, y_, text, fontsize=12) for x_, y_, text in zip(df['PC1'], df['PC2'], df.index)]
+    adjust_text(new_texts, arrowprops=dict(arrowstyle='->', color='grey', lw=1))
+    plt.legend(prop={'family': 'Times New Roman'})
     plt.show()
 
 
@@ -181,13 +159,13 @@ def plot_area_area_heatmap(df):
     plt.show()
 
 
-def plot_area2_fst_heatmap(input_df):
+def plot_area2_fst_heatmap(input_df, cut_line=1/200):
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
     plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
-    pre_df2 = fst.data_prepare_for_heatmap(input_df)
+    pre_df2 = fst.data_prepare_for_heatmap(input_df, cut_line)
 
     mask = np.triu(np.ones_like(pre_df2, dtype=bool), 1)    # 遮盖上三角
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(16, 9))
     sns.heatmap(pre_df2, mask=mask, cmap='coolwarm_r', robust=True, annot=True,
                 annot_kws={'size': 9, 'weight':'bold'},
                 fmt='.3f', square=True, linewidths=.5, cbar_kws={"shrink": .5})

@@ -66,16 +66,16 @@ def filter_by_cf(input_df, cut_line=1/200):
     return pre_df
 
 
-def data_prepare_for_heatmap(pre_df):
+def data_prepare_for_heatmap(pre_df, cut_line):
     input_df = copy.deepcopy(pre_df)
-    input_df = filter_by_cf(input_df, cut_line=1/200)
+    input_df = filter_by_cf(input_df, cut_line)
     area_heatmap_list = input_df.index.tolist()
     pre_df2 = pd.DataFrame()
     for arr in area_heatmap_list:
         for col in area_heatmap_list:
             pre_df2.loc[arr, col] = get_average_fst_from_area2(input_df, arr, col)
 
-    pre_df2.sort_values(by='桂琼', axis=0, inplace=True, ascending=False)
-    pre_df2.sort_values(by='桂琼', axis=1, inplace=True, ascending=False)
+    pre_df2.sort_values(by='陕甘宁', axis=0, inplace=True, ascending=True)
+    pre_df2.sort_values(by='陕甘宁', axis=1, inplace=True, ascending=True)
     return pre_df2
 
