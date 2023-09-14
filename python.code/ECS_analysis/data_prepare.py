@@ -290,3 +290,18 @@ def transform_data_for_stats(input_df, df_id):
     return df_sample
 
 
+def province_ch_to_en_index(df, type_='index'):
+    df_trans = pd.read_excel('D:\我的坚果云\ECS_1.6w_samples\province translation.xlsx', index_col='ch')
+    if type_ == 'index':
+        for i in df.index:
+            df.rename(index={i: df_trans.loc[i, 'en']}, inplace=True)
+    elif type_ == 'column':
+        for i in df.columns:
+            df.rename(columns={i: df_trans.loc[i, 'en']}, inplace=True)
+    elif type_ == 'both':
+        for i in df.columns:
+            df.rename(columns={i: df_trans.loc[i, 'en']}, inplace=True)
+        for i in df.index:
+            df.rename(index={i: df_trans.loc[i, 'en']}, inplace=True)
+    else:
+        raise ValueError

@@ -67,13 +67,14 @@ class PoissonMixture:
 
     def _m_step(self, X, log_resp):
         resp = np.exp(log_resp)
-        nk = resp.sum(axis=0) + 10 * np.finfo(resp.dtype).eps
+        nk = resp.sum(axis=0) + 10*np.finfo(resp.dtype).eps
         self.weights = nk / self.n_samples
         self.params = np.dot(resp.T, X) / nk[:, np.newaxis]
 
     def _estimate_log_prob(self, X):
         par = self.params
-        return -par.T + X * np.log(par.T) - np.array([np.log(np.arange(1, k+1)).sum() for k in X]).reshape(-1, 1)
+        eps = np.finfo(par.dtype).eps
+        return -par.T + X * np.log(par.T+eps) - np.array([np.log(np.arange(1, k+1)).sum() for k in X]).reshape(-1, 1)
 
     def _estimate_log_weights(self):
         return np.log(self.weights)

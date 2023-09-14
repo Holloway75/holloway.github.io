@@ -1,20 +1,18 @@
 import copy
 import os
+os.environ["OMP_NUM_THREADS"] = '1'
 import numpy as np
-from pyckmeans import CKmeans
 import matplotlib.pyplot as plt
 import seaborn as sns
-from matplotlib import ticker
 import data_prepare
 import fst_calculation
 import plot
 from addresss import *
 import pandas as pd
 from PoissonMixture import PoissonMixture
-from sklearn.metrics import silhouette_score, calinski_harabasz_score
 from sklearn.cluster import KMeans
-import multiprocessing
-from matplotlib_venn import venn3
+from sklearn.metrics import silhouette_score, calinski_harabasz_score
+from pyckmeans import CKmeans
 
 
 def cor_matrix(input_df_, pc_num):
@@ -86,9 +84,9 @@ def poisson_mixture_analysis(data, gene):
         df.loc[i, 'weights'] = ":".join(mx.weights.reshape(-1).astype('str'))
         df.loc[i, 'bic'] = mx.bic(data)
     if gene == 'HBA1/HBA2':
-        df.to_csv('D:\我的坚果云\ECS_1.6w_samples\gene_distribution_pc1\HBA1_HBA2.poisson_mixture.csv', encoding='utf_8_sig')
+        df.to_csv('D:\我的坚果云\ECS_1.6w_samples\gene_distribution_pc1_new\HBA1_HBA2.poisson_mixture.csv', encoding='utf_8_sig')
     else:
-        df.to_csv('D:\我的坚果云\ECS_1.6w_samples\gene_distribution_pc1\%s.poisson_mixture.csv' % gene, encoding='utf_8_sig')
+        df.to_csv('D:\我的坚果云\ECS_1.6w_samples\gene_distribution_pc1_new\%s.poisson_mixture.csv' % gene, encoding='utf_8_sig')
 
 
 def poisson(lambda_, k, weight):
@@ -118,42 +116,30 @@ def get_sample_name(dir):
     return df
 
 
-def plot_gene2(input_df, ax, ns, cut_line=1/200):
-    pre_df = data_prepare.data2plot_gene(input_df, cut_line)
-    if 'G6PD' in pre_df.columns:
-        pre_df.drop(labels='G6PD', axis=1, inplace=True)
-    y = pre_df.loc['total']
-    gene_num = len(y)
-    x = np.arange(gene_num)
-
-    ax.barh(x, y, height=0.7, color='#1f77b4', align='center', tick_label=pre_df.columns.tolist())
-    ax.set_xscale("log")
-    ax.spines['top'].set_color(None)
-    ax.spines['right'].set_color(None)
-    ax.axvline(1 / 200, color='r', label='Carrier frequency=1/200')
-    ax.set_title('%d filtered autosomal genes in %s area' % (gene_num, ns))
-    ax.legend()
-    ax.set_xlabel('Carrier frequency')
-    ax.set_ylabel('Gene')
-
-
 if __name__ == '__main__':
     os.chdir(r'D:\我的坚果云\ECS_1.6w_samples')
-    fig,ax = plt.subplots()
-    df = pd.read_excel('ven3.xlsx')
-    a = df['博圣'].dropna().tolist()
-    b = df['协和'].dropna().tolist()
-    c = df['课题'].dropna().tolist()
-    venn3(subsets=[set(a), set(b), set(c)], set_labels=('博圣', '协和', '课题'))
-    plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
-    plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
+    df = pd.read_excel('gene_freq_counts.xlsx', index_col=0)
+
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_axes([0.15, 0.1, 0.75, 0.8])
+    sns.lineplot(data=df, x='max_freq', y='y_%', ax=ax, color='black')
+    ax.set_xscale('log')
+    ax.set_xlim(0.0005, 0.04)
+    ax.set_ylim(0, 1.05)
+    ax.set_xticks([1/1000, 1/200, 1/100, 1/50])
+    ax.set_xticklabels(['1/1000', '1/200', '1/100', '1/50'])
+    ax.set_yticks([0.25, 0.5, 0.6236, 0.7483, 0.9747])
+    ax.set_yticklabels(['25%', '50%', '62.36%', '74.83%', '97.47%'])
+    ax.vlines(x=0.01, ymin=0, ymax=0.6236, colors='blue', linestyles='dashed')
+    ax.vlines(x=0.005, ymin=0, ymax=0.7483, colors='blue', linestyles='dashed')
+    ax.vlines(x=0.001, ymin=0, ymax=0.9747, colors='blue', linestyles='dashed')
+    ax.hlines(y=0.6236, xmin=0.01, xmax=0.04, linestyle='dashed', color='blue')
+    ax.hlines(y=0.7483, xmin=0.005, xmax=0.04, linestyle='dashed', color='blue')
+    ax.hlines(y=0.9747, xmin=0.001, xmax=0.04, linestyle='dashed', color='blue')
+    ax.set_xlabel('Threshold of carrier frequency')
+    ax.set_ylabel('Detection rate of variants')
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.invert_xaxis()
     plt.show()
 
-
-
-    # df = pd.read_csv('gene_distribution_pc1/genes.different_cf.pc1.csv', index_col=0)
-    # for i in df.index:
-    #     cf_list = df.loc[i, 'cf_list'].split(":")
-    #     df.loc[i, 'highest_cf'] = max([float(i) for i in cf_list])
-    #     df.loc[i, 'w of subgroup with highest cf'] = df.loc[i, 'weights'].split(":")[cf_list.index(str(df.loc[i, 'highest_cf']))]
-    # df.to_csv('gene_distribution_pc1/genes.different_cf.pc1.csv', index=True, encoding='utf_8_sig')
