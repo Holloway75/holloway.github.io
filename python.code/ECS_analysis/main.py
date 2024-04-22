@@ -106,4 +106,6 @@ if __name__ == '__main__':
     ax.set_title('Line Plot with Error Bars')
     ax.set_xlabel('X Axis Label')
     ax.set_ylabel('Y Axis Label')
+
+    
     plt.show()
