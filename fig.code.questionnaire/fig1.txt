@@ -5,7 +5,7 @@
     sns.set_theme(style='ticks')
     # fig1
     ax = fig.add_axes((0.15, 0.3, 0.3, 0.55))
-    sns.heatmap(data=df, cmap='coolwarm', linewidths=1, )
+    sns.heatmap(data=df, cmap='coolwarm', linewidths=1, annot=True, annot_kws={'fontsize': 8}, fmt='.2g')
     ax.set_xlabel('Monthly Household Income(CHY)', fontsize=10)
     ax.set_ylabel('Severity of Phenotype', fontsize=10)
     ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor', fontsize=10)

@@ -139,17 +139,17 @@ def convert_in_couples(input_df):
                 df_couple.loc[fam_count, 'female_carrier_status'] = df_tmp.loc[t, 'carrier_status']
                 df_couple.loc[fam_count, 'female_gene'] = df_tmp.loc[t, 'gene']
                 df_couple.loc[fam_count, 'female_variant'] = df_tmp.loc[t, 'var_id']
-        if df_couple.loc[fam_count, 'member_count'] == 2:
-            if not pd.isna(df_couple.loc[fam_count, 'female_gene']):
-                female_gene_list = df_couple.loc[fam_count, 'female_gene'].split(':')
-                x_gene = list(set(female_gene_list) & set(Xlink_list))
-                df_couple.loc[fam_count, 'x_gene'] = ":".join(x_gene)
-                df_couple.loc[fam_count, 'x_gene_num'] = len(x_gene)
-                if not pd.isna(df_couple.loc[fam_count, 'male_gene']):
-                    male_gene_list = df_couple.loc[fam_count, 'male_gene'].split(':')
-                    gene_risk_list = list(set(female_gene_list) & set(male_gene_list))
-                    df_couple.loc[fam_count, 'gene_at_risk'] = ":".join(gene_risk_list)
-                    df_couple.loc[fam_count, 'gene_num_at_risk'] = len(gene_risk_list)
+
+        if not pd.isna(df_couple.loc[fam_count, 'female_gene']):
+            female_gene_list = df_couple.loc[fam_count, 'female_gene'].split(':')
+            x_gene = list(set(female_gene_list) & set(Xlink_list))
+            df_couple.loc[fam_count, 'x_gene'] = ":".join(x_gene)
+            df_couple.loc[fam_count, 'x_gene_num'] = len(x_gene)
+            if not pd.isna(df_couple.loc[fam_count, 'male_gene']):
+                male_gene_list = df_couple.loc[fam_count, 'male_gene'].split(':')
+                gene_risk_list = list(set(female_gene_list) & set(male_gene_list))
+                df_couple.loc[fam_count, 'gene_at_risk'] = ":".join(gene_risk_list)
+                df_couple.loc[fam_count, 'gene_num_at_risk'] = len(gene_risk_list)
         df_couple.loc[fam_count, 'hospital'] = df_tmp['hospital'].tolist()[0]
         fam_count += 1
     return df_couple
@@ -275,15 +275,6 @@ def transform_area_gene_cf_matrix(input_df, cut_line=1/200):
     return pre_df[glist]
 
 
-def random_n_distance(n, input_df, area1='湖南'):
-    df_sample = input_df
-    df_sample_area1 = df_sample[df_sample.area == area1].sample(n, replace=False, axis=0)
-    df = convert_in_areas(df_sample_area1)
-    df.set_index('area', inplace=True)
-    df = transform_area_gene_cf_matrix(df, 0)
-    return np.linalg.norm(df)
-
-
 def transform_merge_area(input_df, merge_rules):
     pre_df = copy.deepcopy(input_df)
     for i in merge_rules.keys():
@@ -305,34 +296,6 @@ def transform_merge_area(input_df, merge_rules):
     return pre_df
 
 
-def transform_data_for_stats(input_df, df_id):
-    column = ['name', 'sex', 'id', 'fid', 'area', 'second_area', 'main_area'] + Auto_list + Xlink_list
-    arr = np.zeros(input_df.shape)
-    df_sample = pd.DataFrame(arr, columns=column)
-
-    # 复制共同column到新df
-    df_sample.name = input_df.name
-    df_sample.sex = input_df.sex
-    df_sample.fid = input_df.fid
-    df_sample.area = input_df.area
-
-    # 获取main_area和second_area
-    main_area = [get_keys(area_counterparts2, i) for i in df_sample['area']]
-    second_area = [get_keys(area_counterparts, i) for i in df_sample['area']]
-    id_list = [get_sample_id(a, b, df_id) for a, b in zip(input_df.name, input_df.fid)]
-    df_sample['main_area'] = main_area
-    df_sample['second_area'] = second_area
-    df_sample['id'] = id_list
-
-    # 标注检出变异的基因
-    for i in input_df.index:
-        if input_df.loc[i, 'carrier_status']:
-            glist = input_df.loc[i, 'gene'].split(':')
-            for t in glist:
-                df_sample.loc[i, t] = 1
-    return df_sample
-
-
 def province_ch_to_en_index(df, type_='index'):
     df_trans = pd.read_excel('E:\我的坚果云\ECS_1.6w_samples\province translation.xlsx', index_col='ch')
     if type_ == 'index':
@@ -348,3 +311,34 @@ def province_ch_to_en_index(df, type_='index'):
             df.rename(index={i: df_trans.loc[i, 'en']}, inplace=True)
     else:
         raise ValueError
+
+
+def covert_in_gene(df_area:pd.DataFrame):
+    df_new = pd.DataFrame(columns=['cf', 'at_risk_rate', 'type', 'accu_p'])
+    individuals_total = df_area['individuals_total'].sum()
+    individuals_female = df_area['individuals_female'].sum()
+    for gene in Auto_list:
+        carrier_counts = df_area[gene].sum()
+        if carrier_counts:
+            cf = carrier_counts/individuals_total
+            df_new.loc[gene, 'cf'] = cf
+            df_new.loc[gene, 'at_risk_rate'] = cf ** 2
+            df_new.loc[gene, 'type'] = 'auto'
+    for gene in Xlink_list:
+        carrier_counts = df_area[gene].sum()
+        if carrier_counts:
+            cf = carrier_counts / individuals_female
+            df_new.loc[gene, 'cf'] = cf
+            df_new.loc[gene, 'at_risk_rate'] = cf
+            df_new.loc[gene, 'type'] = 'x'
+    df_new.sort_values(by='at_risk_rate', ascending=False, inplace=True)
+
+    def get_combined_risk(_order, _list):
+        arr_risk = np.array(_list[:_order])
+        return 1 - np.exp(np.log(1-arr_risk).sum())
+
+    risk_list = df_new['at_risk_rate'].tolist()
+    full_combined_risk = get_combined_risk(df_new.shape[0], risk_list)
+    for num, index in enumerate(df_new.index):
+        df_new.loc[index, 'accu_p'] = get_combined_risk(num+1, risk_list) / full_combined_risk
+    return df_new
