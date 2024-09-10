@@ -6,7 +6,8 @@ __all__ = [
     'Auto_list',
     'Xlink_list',
     'id_province',
-    'province_name_simple_to_full'
+    'province_name_simple_to_full',
+    'area_counterparts_for_final'
 ]
 
 id_province = {
@@ -63,6 +64,16 @@ area_counterparts = {
     '云贵': ['云南', '贵州'],
     '新藏青': ['新疆', '青海', '西藏'],
 }
+
+area_counterparts_for_final = {
+    '桂琼': ['广西', '海南'],
+    '浙沪': ['浙江', '上海'],
+    '闽台': ['福建', '台湾'],
+    '甘宁': ['甘肃', '宁夏'],
+    '新藏青': ['新疆', '青海', '西藏'],
+    '广东': ['广东', '香港', '澳门']
+}
+
 area_counterparts2 = {
     'Far South': ['广东', '广西', '海南', '香港', '澳门'],
     'South': ['浙江', '上海', '江西', '福建', '台湾', '重庆', '湖北', '云南', '贵州', '四川', '湖南'],
@@ -88,6 +99,7 @@ def province_name_simple_to_full(short_name):
     elif short_name == 'unknown':
         return short_name
     else:
+        print(short_name)
         raise ValueError
 
 

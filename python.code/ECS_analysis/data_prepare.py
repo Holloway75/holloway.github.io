@@ -268,8 +268,11 @@ def transform_area_gene_cf_matrix(input_df, cut_line=1/200):
             if gene in Auto_list:
                 pre_df.loc[i, gene] = (pre_df.loc[i, gene]) / (pre_df.loc[i, 'individuals_total'])
             elif gene in Xlink_list:
-                pre_df.loc[i, gene] = (pre_df.loc[i, gene]) / \
+                try:
+                    pre_df.loc[i, gene] = (pre_df.loc[i, gene]) / \
                                   (pre_df.loc[i, 'individuals_total'] - pre_df.loc[i, 'individuals_male'])
+                except:
+                    pre_df.loc[i, gene] = (pre_df.loc[i, gene]) / pre_df.loc[i, 'individuals_female']
             else:
                 raise ValueError
     return pre_df[glist]
@@ -285,7 +288,10 @@ def transform_merge_area(input_df, merge_rules):
         pre_df.loc[i, 'carriers_auto'] = sum(df_tmp['carriers_auto'].tolist())
         pre_df.loc[i, 'carriers_x'] = sum(df_tmp['carriers_x'].tolist())
         pre_df.loc[i, 'carriers_total'] = sum(df_tmp['carriers_total'].tolist())
-        pre_df.loc[i, 'individuals_male'] = sum(df_tmp['individuals_male'].tolist())
+        try:
+            pre_df.loc[i, 'individuals_male'] = sum(df_tmp['individuals_male'].tolist())
+        except:
+            pre_df.loc[i, 'individuals_female'] = sum(df_tmp['individuals_female'].tolist())
         pre_df.loc[i, 'individuals_total'] = sum(df_tmp['individuals_total'].tolist())
 
         # 统计合并地区各个基因的检出次数
@@ -296,8 +302,12 @@ def transform_merge_area(input_df, merge_rules):
     return pre_df
 
 
-def province_ch_to_en_index(df, type_='index'):
-    df_trans = pd.read_excel('E:\我的坚果云\ECS_1.6w_samples\province translation.xlsx', index_col='ch')
+def province_ch_to_en_index(df, type_='index', final=True):
+    if final:
+        sheetname = 'final'
+    else:
+        sheetname = 'mid'
+    df_trans = pd.read_excel(r'E:\我的坚果云\ECS_1.6w_samples\province translation.xlsx', index_col='ch', sheet_name=sheetname)
     if type_ == 'index':
         for i in df.index:
             df.rename(index={i: df_trans.loc[i, 'en']}, inplace=True)

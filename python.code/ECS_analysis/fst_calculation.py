@@ -54,7 +54,10 @@ def filter_by_cf(input_df, cut_line=1/200):
             if cf < cut_line:
                 rm_list.append(gene)
         elif gene in Xlink_list:
-            cf = sum(input_df[gene].tolist()) / (sum(input_df['individuals_total']) - sum(input_df['individuals_male']))
+            try:
+                cf = sum(input_df[gene].tolist()) / (sum(input_df['individuals_total']) - sum(input_df['individuals_male']))
+            except:
+                cf = sum(input_df[gene].tolist()) / sum(input_df['individuals_female'])
             if cf < cut_line:
                 rm_list.append(gene)
         else:

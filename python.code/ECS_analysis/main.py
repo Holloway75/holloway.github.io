@@ -1,16 +1,24 @@
+import copy
 import os
-import re
-import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import seaborn as sns
 import data_prepare
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import LeaveOneOut
+from sklearn.preprocessing import StandardScaler
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+import plot
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score, calinski_harabasz_score, accuracy_score, roc_auc_score, roc_curve, auc
 from sklearn.decomposition import PCA
-
+import statsmodels.api as sm
 os.environ["OMP_NUM_THREADS"] = '1'
 os.environ["KERAS_BACKEND"] = "jax"
 import numpy as np
 from addresss import *
 import pandas as pd
+from pyckmeans import CKmeans
+from scipy.stats import chi2
 
 
 def poisson_mixture_analysis(data, gene):
@@ -66,10 +74,53 @@ def get_sample_name(dir):
 
 
 if __name__ == '__main__':
-    os.chdir('E:\我的坚果云\ECS_final')
-    df = pd.read_excel('areas.without_109&G6PD.xlsx', index_col=0)
+    os.chdir('E:\我的坚果云\胎盘-早产')
+    # 创建一些示例数据
+    df = pd.read_excel('stats.xlsx', index_col=0, sheet_name='LR')
 
-    print(df['carriers_auto'].sum() / df['individuals_total'].sum())
+
+    # 绘制分组柱状图
+    fig = plt.figure(figsize=(8, 4))
+    ax = fig.add_axes((0.1, 0.25, 0.8, 0.7))
+
+    fontsize=9
+    xlabels = [
+        'Premature rupture\n of membrane',
+        'Perinatal death',
+        'Bronchopulmonary\n dysplasia',
+        'White matter\n lesion',
+        'Intracranial\n hemorrhage',
+        'Apgar score\n <8 at 5 min',
+        'Meningitis',
+        'Retinopathy'
+    ]
+
+    # 使用pivot方法重塑数据
+    sns.barplot(data=df, x='outcome', y='Log (LRplacenta/LRbasic )', hue='model', alpha=0.9, linewidth=1,
+                     edgecolor='w')
+    ax.set_xticks(np.arange(0, 8))
+    ax.set_xticklabels(xlabels, fontsize=fontsize, rotation=30, ha='center')
+    ax.set_yticklabels(np.arange(0, 7), fontsize=fontsize)
+    ax.set_ylabel('$Log(LR)$', fontsize=fontsize)
+    ax.spines[['right', 'top']].set_visible(False)
+
+    for x_, (text, value) in enumerate(zip(df['p value'], df['Log (LRplacenta/LRbasic )'])):
+        c = 'black'
+        if text < 0.05:
+            c = 'r'
+        if x_ == 0:
+            text = "p=%.3f" % text
+        else:
+            text = "%.3f" % text
+        x_ = x_ % 8 + (x_ // 8)/2 - 0.45
+        ax.text(x_, value+0.1, text, fontsize=fontsize, c=c)
+    plt.legend(title='Extraction Methods of Placental Pathological Features', fontsize=fontsize)
+    plt.show()
+
+
+
+
+
 
 
 
