@@ -307,7 +307,7 @@ def province_ch_to_en_index(df, type_='index', final=True):
         sheetname = 'final'
     else:
         sheetname = 'mid'
-    df_trans = pd.read_excel(r'E:\我的坚果云\ECS_1.6w_samples\province translation.xlsx', index_col='ch', sheet_name=sheetname)
+    df_trans = pd.read_excel(r'D:\我的坚果云\ECS_1.6w_samples\province translation.xlsx', index_col='ch', sheet_name=sheetname)
     if type_ == 'index':
         for i in df.index:
             df.rename(index={i: df_trans.loc[i, 'en']}, inplace=True)

@@ -80,7 +80,7 @@ area_counterparts2 = {
     'North': ['北京', '天津', '内蒙古', '吉林', '陕西', '宁夏', '新疆', '甘肃', '青海', '西藏', '山东', '辽宁', '黑龙江', '河北',
               '江苏', '安徽', '山西', '河南'],
 }
-os.chdir('E:\我的坚果云\ECS_mid')
+os.chdir('D:\我的坚果云\ECS_mid')
 
 with open('gene.autosome.list', 'r') as f:
     Auto_list = f.read().splitlines()
