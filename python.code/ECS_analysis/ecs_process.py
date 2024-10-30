@@ -24,7 +24,6 @@ class Gene:
         self.symbol = gene_symbol
         self.samples = None
         self.area_carriers_dict = {}      # 创建地区-携带者数字典
-        self.gene_type = None
 
     def add_carriers(self, areas, carriers):
         for key, value in zip(areas, carriers):
