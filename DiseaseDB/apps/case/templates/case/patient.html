@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}病例录入 - 临床信息管理系统{% endblock %}
+
+{% block content1 %}
+
+<h1>病例录入</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {% if form.errors %}
+        <div class="alert alert-danger">  <!-- 使用 Bootstrap 或其他样式 -->
+            录入格式错误！
+        </div>
+    {% endif %}
+    {{ form.as_p }}
+    <button type="submit">提交</button>
+    <a href="{% url 'patient_list' %}" class="btn btn-secondary">返回列表</a>
+</form>
+
+{% endblock %}

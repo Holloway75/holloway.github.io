@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content1 %}
+<h1>样本详情: {{ sample.name }}</h1>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">姓名: {{ sample.name }}</h5>
+        <p class="card-text">主要诊断：{{ sample.primary_diagnosis }}</p>
+        <p class="card-text">出生日期：{{ sample.birth_date }}</p>
+        <p class="text-muted">
+            性别: {{ sample.gender }}<br>
+            主要诊断: {{ sample.birth_date }}<br>
+            所有者: {{ sample.owner }}<br>
+            创建者: {{ sample.created_by }}<br>
+            创建时间: {{ sample.created_at|date:"Y-m-d H:i" }}<br>
+            最后修改者: {{ sample.modified_by }}<br>
+            最后修改时间: {{ sample.modified_at|date:"Y-m-d H:i" }}<br>
+        </p>
+        <a href="{% url 'patient_update' sample.patient_id %}">修改</a>
+        <a href="{% url 'patient_delete' sample.patient_id %}">删除</a>
+        <a href="{% url 'patient_list' %}">返回列表</a>
+    </div>
+</div>
+{% endblock %}

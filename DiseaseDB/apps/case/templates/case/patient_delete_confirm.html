@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content1 %}
+<div class="confirmation-box">
+    <h2>确认删除操作</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="button-group">
+            <button type="submit" class="btn-danger">确认删除</button>
+            <a href="{% url 'patient_list' %}" class="btn-cancel">取消</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

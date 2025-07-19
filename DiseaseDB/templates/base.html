@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}病例信息管理系统{% endblock %}</title>
+	{% load static %}
+
+	{% block extra_css %}{% endblock %}
+</head>
+<body>
+	<!-- 导航栏 -->
+	{% include "includes/_header.html" %}
+<main>
+	<div>{% block content1 %}{% endblock %}</div>
+</main>
+
+
+</body>
+</html>

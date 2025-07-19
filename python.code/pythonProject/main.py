@@ -41,4 +41,3 @@ if __name__ == '__main__':
 
     df_result.to_excel('tmp.xlsx', index=True)
 
-

@@ -1,0 +1,23 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/components.css' %}">
+
+<div class="col-container" id="headline">
+    <div class="col-container">
+        <img src="{% static 'images/logo.png' %}" alt="网站Logo" class="logo">
+        <h1 class="site-name">病例信息管理系统</h1>
+    </div>
+    <ul class="nav-2">
+        <li><a class="active" href="#home">主页</a></li>
+        <li><a href="{% url 'patient_list' %}">病例管理</a></li>
+        <li><a href="#contact">化验检查</a></li>
+        <li><a href="#about">关于</a></li>
+        {% if user.is_authenticated %}
+            <li style="float:right"><a class="active" href="{% url 'logout' %}">退出</a></li>
+            <li style="float:right"><a>当前用户：{{ user.name }}</a></span></li>
+
+        {% else %}
+            <li style="float:right"><a class="active" href="{% url 'login' %}">登录</a></li>
+        {% endif %}
+    </ul>
+</div>
+<div style="height:70px"></div>

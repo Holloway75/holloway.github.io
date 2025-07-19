@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}登录 - 临床信息管理系统{% endblock %}
+
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'users/css/login.css' %}">
+{% endblock %}
+
+{% block content1 %}
+
+<!-- /form -->
+<section class="w3l-workinghny-form">
+    <div class="workinghny-form-grid">
+        <div class="wrapper">
+            <div class="logo">
+                <h1>
+                    Working Sign In
+                </h1>
+            </div>
+            <div class="workinghny-form-grid d-flex">
+                <div class="workinghny-left-img align-end">
+                    <img src="{% static 'users/images/login.png' %}" class="img-responsive" alt="img">
+                </div>
+                <div class="form-right-inf">
+                    <div class="login-form-content">
+                        <form action="#" class="signin-form" method="post">
+                            <div class="one-frm">
+                                <label>用户名：</label>{{ form.username }}
+                            </div>
+                            <div class="one-frm">
+                                <label>密码：</label>{{ form.password }}
+                            </div>
+                            <div class="one-frm">
+                                <label>验证码：</label>{{ form.captcha }}
+                            </div>
+                            <button class="btn btn-style mt-3">登录</button>
+                            {% csrf_token %}
+                            {% if form.errors %}
+                            <h3>用户名、密码或验证码错误！</h3>
+                            {% endif %}
+                        </form>
+                    </div>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="copyright text-center">
+        <div class="wrapper">
+            <p class="copy-footer-29">解放军总医院第七医学中心妇产医学部产科</p>
+        </div>
+    </div>
+</section>
+<!-- //form -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% endblock %}
+

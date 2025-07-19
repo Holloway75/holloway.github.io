@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content1 %}
+
+    <h1>样本列表</h1>
+    <a href="{% url 'create_patient' %}"><p>添加病例</p></a>
+
+{% if Patients %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>姓名</th>
+            <th>患者ID</th>
+            <th>性别</th>
+            <th>所有者</th>
+            <th>最后修改时间</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sample in Patients %}
+        <tr>
+            <td>{{ sample.patient_name }}</td>
+            <td>{{ sample.patient_id }}</td>
+            <td>{{ sample.gender }}</td>
+            <td>{{ sample.owner }}</td>
+            <td>{{ sample.modified_at|date:"Y-m-d H:i" }}</td>
+            <td>
+                <a href="{% url 'patient_detail' sample.patient_id %}">查看</a>|
+                <a href="{% url 'patient_update' sample.patient_id %}">修改</a>|
+                <a href="{% url 'patient_delete' sample.patient_id %}">删除</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">您没有可查看的样本。</div>
+{% endif %}
+
+{% if is_paginated %}  <!-- 仅当需要分页时显示 -->
+<div class="pagination">
+  <span class="step-links">
+    <!-- 上一页 -->
+    {% if page_obj.has_previous %}
+      <a href="?page=1">&laquo; 首页</a>
+      <a href="?page={{ page_obj.previous_page_number }}">上一页</a>
+    {% endif %}
+
+    <!-- 当前页/总页数 -->
+    <span class="current">
+      第 {{ page_obj.number }} 页 / 共 {{ paginator.num_pages }} 页
+    </span>
+
+    <!-- 下一页 -->
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}">下一页</a>
+      <a href="?page={{ paginator.num_pages }}">末页 &raquo;</a>
+    {% endif %}
+  </span>
+</div>
+{% endif %}
+
+{% endblock %}
